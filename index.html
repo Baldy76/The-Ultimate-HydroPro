@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v1.8</title>
+    <title>Ultimate Hydro Pro v1.9</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=18">
+    <link rel="stylesheet" href="styles.css?v=19">
 </head>
 <body class="light-mode">
 
@@ -61,6 +61,8 @@
             
             <button class="ADM-save-btn" style="width: calc(100% - 40px); margin: 0 20px 10px; background: var(--text); color: var(--bg);" onclick="routeMyDay()">📍 ROUTE MY DAY</button>
             
+            <button class="ADM-save-btn" style="width: calc(100% - 40px); margin: 0 20px 20px; background: transparent; border: 2px solid var(--accent); color: var(--accent); box-shadow: none;" onclick="openTomorrowModal()">🔮 PRE-ROUTE TOMORROW</button>
+
             <div id="WEE-progress-dashboard"></div>
             
             <div id="WEE-list-container"></div>
@@ -89,7 +91,9 @@
         <section id="finances-root" class="tab-content" data-title="Finances">
             <div id="FIN-dashboard"></div>
             
-            <div class="ADM-card" style="padding: 25px 15px;">
+            <div id="FIN-split-dashboard"></div>
+
+            <div class="ADM-card" style="padding: 25px 15px; margin-top: 20px;">
                 <h3 class="ADM-hdr" style="margin-bottom: 20px;">Revenue Pipeline</h3>
                 <div style="height: 300px; position: relative;">
                     <canvas id="financeChartCanvas"></canvas>
@@ -145,7 +149,7 @@
                 </div>
                 <button class="ADM-util-btn green" onclick="cmdCycleMonth()">🚀 START NEW MONTH</button>
                 <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v1.8</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v1.9</footer>
             </div>
         </section>
 
@@ -224,6 +228,11 @@
             <div class="modal-drag-pill"></div>
             <button class="close-x-btn" onclick="closePaymentModal()">✕</button>
 
+            <div class="theme-segmented-control" style="margin-bottom: 20px;">
+                <button id="btnPayCash" class="segment active" onclick="setPayMethod('Cash')">💵 Cash</button>
+                <button id="btnPayBank" class="segment" onclick="setPayMethod('Bank')">🏦 Bank Tx</button>
+            </div>
+
             <div class="CMD-header" style="border-bottom: none; text-align: center;">
                 <div class="CMD-header-sub" style="margin-bottom: 5px; color: var(--success);">SECURE CHECKOUT</div>
                 <h2 id="pay-name" style="font-size: 26px;">Customer Name</h2>
@@ -244,6 +253,19 @@
         </div>
     </div>
 
+    <div id="tomorrowModal" class="modal-overlay hidden" onclick="closeTomorrowModal()">
+        <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
+            <div class="modal-drag-pill"></div>
+            <button class="close-x-btn" onclick="closeTomorrowModal()">✕</button>
+            <div class="CMD-header">
+                <h2>Tomorrow's Route</h2>
+                <div class="CMD-header-sub" id="tomorrow-title-sub">Loading...</div>
+            </div>
+            <div style="font-size: 14px; font-weight: 700; opacity: 0.6; margin-bottom: 15px;">Send gate reminders to these customers:</div>
+            <div id="tomorrow-list" style="max-height: 50vh; overflow-y: auto;"></div>
+        </div>
+    </div>
+
     <div id="confirmModal" class="modal-overlay hidden" onclick="closeConfirmModal()">
         <div class="modal-content" onclick="event.stopPropagation()" style="text-align: center;">
             <button class="close-x-btn" onclick="closeConfirmModal()">✕</button>
@@ -257,6 +279,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=18" defer></script>
+    <script src="app.js?v=19" defer></script>
 </body>
 </html>
