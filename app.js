@@ -67,7 +67,7 @@ if ('serviceWorker' in navigator) {
 
 const escapeHTML = (str) => {
     if (!str) return '';
-    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); 
+    return String(str).replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """).replace(/'/g, "'"); 
 };
 
 window.getArrearsData = (c) => {
@@ -107,7 +107,7 @@ const initPTR = () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("Ultimate Hydro Pro v2.3 Booting...");
+    console.log("Ultimate Hydro Pro v2.4 Booting...");
     
     try {
         await idb.init(); 
@@ -246,7 +246,7 @@ window.openAddCustomerModal = (id = null) => {
         document.getElementById('cPhone').value = c.phone || '';
         document.getElementById('cPrice').value = c.price || '';
         document.getElementById('cNotes').value = c.notes || '';
-        document.getElementById('cFreq').value = c.freq || '4'; // ✨ NEW: Load frequency
+        document.getElementById('cFreq').value = c.freq || '4'; 
         document.getElementById('cWeek').value = c.week || '1';
         document.getElementById('cDay').value = c.day || 'Mon';
         document.getElementById('briefingModal').classList.add('hidden');
@@ -259,7 +259,7 @@ window.openAddCustomerModal = (id = null) => {
         document.getElementById('cPhone').value = '';
         document.getElementById('cPrice').value = '';
         document.getElementById('cNotes').value = '';
-        document.getElementById('cFreq').value = '4'; // ✨ NEW: Default frequency
+        document.getElementById('cFreq').value = '4'; 
         document.getElementById('cWeek').value = '1';
         document.getElementById('cDay').value = 'Mon';
     }
@@ -278,7 +278,7 @@ window.saveCustomer = () => {
         street: document.getElementById('cStreet').value.trim(), postcode: document.getElementById('cPostcode').value.trim(), 
         phone: document.getElementById('cPhone').value.trim(), price: parseFloat(document.getElementById('cPrice').value) || 0, 
         notes: document.getElementById('cNotes').value.trim(), 
-        freq: parseInt(document.getElementById('cFreq').value) || 4, // ✨ NEW: Save frequency
+        freq: parseInt(document.getElementById('cFreq').value) || 4, 
         week: document.getElementById('cWeek').value, 
         day: document.getElementById('cDay').value 
     };
@@ -287,7 +287,6 @@ window.saveCustomer = () => {
         const cIndex = db.customers.findIndex(x => x.id === editingCustomerId);
         if (cIndex > -1) { db.customers[cIndex] = { ...db.customers[cIndex], ...newDetails }; showToast(`${name} updated`, "success"); }
     } else {
-        // ✨ NEW: Initialize cycleOffset at 0 so they show up this month
         db.customers.push({ id: Date.now().toString(), order: Date.now(), cycleOffset: 0, ...newDetails, cleaned: false, skipped: false, paidThisMonth: 0, pastArrears: [] });
         showToast(`${name} added to database`, "success"); 
     }
@@ -317,7 +316,6 @@ window.closeConfirmModal = () => { document.getElementById('confirmModal').class
 
 document.getElementById('confirmActionBtn').addEventListener('click', () => { if(confirmCallback) confirmCallback(); closeConfirmModal(); });
 
-// ✨ NEW: THE FREQUENCY ENGINE MATHEMATICS ✨
 window.cmdCycleMonth = () => {
     showConfirm("Start New Month?", "This will reset all cleans to false and roll unpaid balances into arrears.", () => {
         const cycleMonth = new Date().toLocaleString('en-GB', { month: 'short', year: '2-digit' });
@@ -329,17 +327,13 @@ window.cmdCycleMonth = () => {
                 c.pastArrears.push({ month: cycleMonth, amt: price - paid }); 
             } 
             
-            // Frequency Engine Math
-            let freq = c.freq || 4; // Default to 4-weekly if missing
+            let freq = c.freq || 4; 
             if (c.cycleOffset === undefined) c.cycleOffset = 0;
             
             if (c.cycleOffset > 0) {
-                // Not their turn yet, decrement offset and keep them skipped
                 c.cycleOffset--;
                 c.skipped = true; 
             } else {
-                // It is their turn! Reset the offset based on frequency. 
-                // e.g. 8-weekly (8/4 - 1 = 1 skipped month). 12-weekly (12/4 - 1 = 2 skipped months).
                 c.cycleOffset = (freq / 4) - 1;
                 c.skipped = false; 
             }
@@ -357,7 +351,55 @@ window.cmdNuclear = () => {
     });
 };
 
-window.exportToQuickBooks = () => { triggerHaptic(); let csv = "Date,Description,Amount,Type,Category\n"; const today = new Date().toLocaleDateString('en-GB'); db.customers.forEach(c => { if(parseFloat(c.paidThisMonth) > 0) csv += `${today},Income: ${escapeHTML(c.name)},${c.paidThisMonth},Income,Service\n`; }); db.expenses.forEach(e => { csv += `${e.date},${escapeHTML(e.desc)},${e.amt},Expense,${escapeHTML(e.cat) || 'Other'}\n`; }); const blob = new Blob([csv], { type: 'text/csv' }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "HydroPro_QuickBooks.csv"; link.click(); };
+// --- ✨ PHASE 10: ENTERPRISE ACCOUNTING EXPORTS ✨ ---
+
+window.exportToQuickBooks = () => { 
+    triggerHaptic(); 
+    let csv = "Date,Description,Amount,Type,Category\n"; 
+    const today = new Date().toLocaleDateString('en-GB'); 
+    db.customers.forEach(c => { if(parseFloat(c.paidThisMonth) > 0) csv += `${today},Income: ${escapeHTML(c.name)},${c.paidThisMonth},Income,Service\n`; }); 
+    db.expenses.forEach(e => { csv += `${e.date},${escapeHTML(e.desc)},${e.amt},Expense,${escapeHTML(e.cat) || 'Other'}\n`; }); 
+    triggerDownload(csv, "HydroPro_QuickBooks.csv");
+};
+
+window.exportToXero = () => { 
+    triggerHaptic(); 
+    // Xero loves: Date, Description, Reference, Amount, AccountCode
+    let csv = "Date,Description,Reference,Amount,AccountCode\n"; 
+    const today = new Date().toLocaleDateString('en-GB'); 
+    db.customers.forEach(c => { if(parseFloat(c.paidThisMonth) > 0) csv += `${today},Window Cleaning - ${escapeHTML(c.name)},${c.id},${c.paidThisMonth},200\n`; }); 
+    db.expenses.forEach(e => { csv += `${e.date},${escapeHTML(e.desc)},${escapeHTML(e.cat)},-${e.amt},400\n`; }); 
+    triggerDownload(csv, "HydroPro_Xero.csv");
+};
+
+window.exportToSage = () => { 
+    triggerHaptic(); 
+    // Sage loves: Date, Reference, Details, Net Amount, Tax Amount
+    let csv = "Date,Reference,Details,Net Amount,Tax Amount\n"; 
+    const today = new Date().toLocaleDateString('en-GB'); 
+    db.customers.forEach(c => { if(parseFloat(c.paidThisMonth) > 0) csv += `${today},CUST-${c.id},Window Cleaning,${c.paidThisMonth},0.00\n`; }); 
+    db.expenses.forEach(e => { csv += `${e.date},EXP-${e.id},${escapeHTML(e.desc)},-${e.amt},0.00\n`; }); 
+    triggerDownload(csv, "HydroPro_Sage.csv");
+};
+
+window.exportToFreeAgent = () => { 
+    triggerHaptic(); 
+    // FreeAgent is elegantly simple: Date, Amount, Description
+    let csv = "Date,Amount,Description\n"; 
+    const today = new Date().toLocaleDateString('en-GB'); 
+    db.customers.forEach(c => { if(parseFloat(c.paidThisMonth) > 0) csv += `${today},${c.paidThisMonth},Income: ${escapeHTML(c.name)}\n`; }); 
+    db.expenses.forEach(e => { csv += `${e.date},-${e.amt},Expense: ${escapeHTML(e.desc)}\n`; }); 
+    triggerDownload(csv, "HydroPro_FreeAgent.csv");
+};
+
+const triggerDownload = (csvContent, filename) => {
+    const blob = new Blob([csvContent], { type: 'text/csv' }); 
+    const url = URL.createObjectURL(blob); 
+    const link = document.createElement("a"); 
+    link.href = url; link.download = filename; link.click();
+    showToast(`${filename} Generated!`, "success");
+};
+
 window.exportData = () => { triggerHaptic(); const blob = new Blob([JSON.stringify(db)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "HydroPro_Backup.json"; link.click(); };
 window.importData = (event) => { const reader = new FileReader(); reader.onload = async (e) => { try { const imported = JSON.parse(e.target.result); db.customers = imported.customers || []; db.expenses = imported.expenses || []; db.history = imported.history || []; db.bank = imported.bank || { name: '', acc: '' }; await idb.set('master_db', db); showToast("Data Restored Successfully", "success"); setTimeout(() => location.reload(), 1500); } catch (err) { showToast("Invalid Format File", "error"); } }; reader.readAsText(event.target.files[0]); };
 
@@ -373,7 +415,6 @@ window.renderMaster = () => {
     const search = (document.getElementById('mainSearch')?.value || "").toLowerCase();
     let renderedCount = 0;
     
-    // ✨ NEW: Global "Caller ID" search formatting
     const searchStr = search.replace(/\s+/g, '');
     
     db.customers.forEach(c => {
@@ -516,7 +557,6 @@ window.cmdReceiptSMS = (phone, amt, date) => {
     window.open(`sms:${p}${separator}body=${encodeURIComponent(msg)}`, '_blank');
 };
 
-// ✨ NEW: GENERATE PROFESSIONAL PDF INVOICE ✨
 window.cmdGenerateInvoice = (id) => {
     triggerHaptic();
     const c = db.customers.find(x => x.id === id); if(!c) return;
@@ -549,7 +589,6 @@ window.cmdGenerateInvoice = (id) => {
         </div>
     `;
 
-    // Trigger browser print (Allows Save to PDF on iOS/Android)
     window.print();
 };
 
@@ -731,7 +770,6 @@ window.showJobBriefing = (id) => {
         </div>
         ${notesHtml}
         ${generateArrearsHtml(arrData, c.id, 'job')}
-        
         <div class="CMD-action-grid">
             <button class="CMD-action-btn clean" onclick="cmdToggleClean('${c.id}')"><span style="font-size:24px;">🧼</span> <br>${c.cleaned ? 'UNDO CLEAN' : 'MARK CLEAN'}</button>
             <button class="CMD-action-btn pay" onclick="cmdSettlePaid('${c.id}', 'job')"><span style="font-size:24px;">💰</span> <br>COLLECT £</button>
