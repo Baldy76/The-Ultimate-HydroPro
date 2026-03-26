@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v3.0</title>
+    <title>Ultimate Hydro Pro v3.1</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=30">
+    <link rel="stylesheet" href="styles.css?v=31">
 </head>
 <body class="light-mode">
 
@@ -31,7 +31,7 @@
         <section id="home-root" class="tab-content active" data-title="Dashboard">
             <div style="padding: 0 25px 15px;">
                 <p style="margin:0; opacity:0.5; font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:1px;" id="home-date">LOADING DATE...</p>
-                <h2 style="margin:0; font-size:32px; font-weight:950; letter-spacing:-1px;">Good Morning.</h2>
+                <h2 id="home-greeting" style="margin:0; font-size:32px; font-weight:950; letter-spacing:-1px;">Good Morning.</h2>
             </div>
             <div id="home-weather-pill" class="ADM-card" style="margin: 0 20px 20px; padding: 15px 20px; display:flex; align-items:center; gap: 15px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.03)!important;" onclick="openTab('weather-root', 'nav-wth-btn')">
                 <span style="font-size: 30px;" id="hw-icon">🌤️</span>
@@ -127,7 +127,8 @@
             </div>
             
             <h3 class="ADM-hdr" style="text-align: left; padding-left: 25px; margin-bottom: 10px;">Log Expense</h3>
-            <button class="ADM-save-btn" style="margin: 0 20px 10px; width: calc(100% - 40px); background: var(--card); color: var(--text); border: 2px dashed var(--ios-grey); box-shadow: none;" onclick="openExpenseModal()">➕ LOG NEW EXPENSE</button>
+            <button class="ADM-save-btn ai-glow-btn" style="margin: 0 20px 10px; width: calc(100% - 40px); font-size: 14px; height: 60px!important;" onclick="triggerAI('receipt')">📸 Auto-Scan Receipt with AI ✨</button>
+            <button class="ADM-save-btn" style="margin: 0 20px 10px; width: calc(100% - 40px); background: var(--card); color: var(--text); border: 2px dashed var(--ios-grey); box-shadow: none;" onclick="openExpenseModal()">➕ LOG MANUAL EXPENSE</button>
             
             <h3 class="ADM-hdr" style="text-align: left; padding-left: 25px; margin-top: 30px; margin-bottom: 15px;">Recent Transactions</h3>
             <div id="FIN-ledger-list"></div>
@@ -203,7 +204,7 @@
                 </div>
                 <button class="ADM-util-btn green" onclick="cmdCycleMonth()">🚀 START NEW MONTH</button>
                 <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v3.0 AI</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v3.1</footer>
             </div>
         </section>
 
@@ -238,15 +239,11 @@
         </div>
     </div>
 
-
     <div id="expenseModal" class="modal-overlay hidden" onclick="closeExpenseModal()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
             <button class="close-x-btn" onclick="closeExpenseModal()">✕</button>
-            <div class="CMD-header"><h2>Log Expense</h2></div>
-            
-            <button class="ADM-save-btn ai-glow-btn" style="margin-top: 0; margin-bottom: 20px; font-size: 14px; height: 60px!important;" onclick="triggerAI('receipt')">📸 Auto-Scan Receipt with AI ✨</button>
-
+            <div class="CMD-header"><h2>Log Manual Expense</h2></div>
             <div class="ADM-row">
                 <span>🏷️</span>
                 <select id="mExpCat">
@@ -359,6 +356,6 @@
 
     <div id="print-area"></div>
 
-    <script src="app.js?v=30" defer></script>
+    <script src="app.js?v=31" defer></script>
 </body>
 </html>
