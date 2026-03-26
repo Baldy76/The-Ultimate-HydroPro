@@ -65,9 +65,15 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+// ✨ CRITICAL FIX: Bulletproof HTML Escaping using standardized character codes ✨
 const escapeHTML = (str) => {
     if (!str) return '';
-    return String(str).replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """).replace(/'/g, "'"); 
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;"); 
 };
 
 window.getArrearsData = (c) => {
@@ -107,7 +113,7 @@ const initPTR = () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("Ultimate Hydro Pro v2.4 Booting...");
+    console.log("Ultimate Hydro Pro v2.5 Booting...");
     
     try {
         await idb.init(); 
@@ -351,8 +357,6 @@ window.cmdNuclear = () => {
     });
 };
 
-// --- ✨ PHASE 10: ENTERPRISE ACCOUNTING EXPORTS ✨ ---
-
 window.exportToQuickBooks = () => { 
     triggerHaptic(); 
     let csv = "Date,Description,Amount,Type,Category\n"; 
@@ -364,7 +368,6 @@ window.exportToQuickBooks = () => {
 
 window.exportToXero = () => { 
     triggerHaptic(); 
-    // Xero loves: Date, Description, Reference, Amount, AccountCode
     let csv = "Date,Description,Reference,Amount,AccountCode\n"; 
     const today = new Date().toLocaleDateString('en-GB'); 
     db.customers.forEach(c => { if(parseFloat(c.paidThisMonth) > 0) csv += `${today},Window Cleaning - ${escapeHTML(c.name)},${c.id},${c.paidThisMonth},200\n`; }); 
@@ -374,7 +377,6 @@ window.exportToXero = () => {
 
 window.exportToSage = () => { 
     triggerHaptic(); 
-    // Sage loves: Date, Reference, Details, Net Amount, Tax Amount
     let csv = "Date,Reference,Details,Net Amount,Tax Amount\n"; 
     const today = new Date().toLocaleDateString('en-GB'); 
     db.customers.forEach(c => { if(parseFloat(c.paidThisMonth) > 0) csv += `${today},CUST-${c.id},Window Cleaning,${c.paidThisMonth},0.00\n`; }); 
@@ -384,7 +386,6 @@ window.exportToSage = () => {
 
 window.exportToFreeAgent = () => { 
     triggerHaptic(); 
-    // FreeAgent is elegantly simple: Date, Amount, Description
     let csv = "Date,Amount,Description\n"; 
     const today = new Date().toLocaleDateString('en-GB'); 
     db.customers.forEach(c => { if(parseFloat(c.paidThisMonth) > 0) csv += `${today},${c.paidThisMonth},Income: ${escapeHTML(c.name)}\n`; }); 
@@ -896,43 +897,37 @@ window.processPayment = (type) => {
 
 window.addFinanceExpense = () => { 
     triggerHaptic();
-    const desc = document.getElementById('fExpDesc').value.trim(); const amt = parseFloat(document.getElementById('fExpAmt').value); const cat = document.getElementById('fExpCat').value;
+    const desc = document.getElementById('fExpDesc').value.trim(); 
+    const amt = parseFloat(document.getElementById('fExpAmt').value); 
+    const cat = document.getElementById('fExpCat').value;
+    
     if(!desc || isNaN(amt) || amt <= 0) return showToast("Description and Amount required", "error");
+    
     db.expenses.push({ id: Date.now(), desc, amt, cat, date: new Date().toLocaleDateString('en-GB') });
-    saveData(); document.getElementById('fExpDesc').value = ''; document.getElementById('fExpAmt').value = ''; renderFinances();
+    saveData(); 
+    
+    document.getElementById('fExpDesc').value = ''; 
+    document.getElementById('fExpAmt').value = ''; 
+    renderFinances();
     showToast("Expense Logged", "success");
 };
 
-const arc3DPlugin = {
-    id: 'arc3DPlugin',
-    beforeDatasetDraw: (chart, args, options) => {
-        if(typeof chart === 'undefined' || !chart.ctx) return;
-        const ctx = chart.ctx; ctx.save();
-        ctx.shadowColor = document.body.classList.contains('dark-mode') ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.2)';
-        ctx.shadowBlur = 15; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 10;
-    },
-    afterDatasetDraw: (chart, args, options) => { if(typeof chart !== 'undefined' && chart.ctx) chart.ctx.restore(); }
-};
-
+// FINTECH RENDERER INJECTED HERE
 window.renderFinances = () => {
-    const dash = document.getElementById('FIN-dashboard'); 
-    const splitDash = document.getElementById('FIN-split-dashboard');
-    const ledger = document.getElementById('FIN-ledger'); 
-    if(!dash || !ledger || !splitDash) return;
+    const blackCard = document.getElementById('FIN-black-card'); 
+    const bentoBox = document.getElementById('FIN-bento-box');
+    const ledger = document.getElementById('FIN-ledger-list'); 
+    if(!blackCard || !bentoBox || !ledger) return;
     
     let income = 0, spend = 0, expected = 0, totalArrears = 0, forecasted = 0; 
-    let arrearsListHtml = '';
-
+    
     db.customers.forEach(c => {
         income += (parseFloat(c.paidThisMonth) || 0); 
         expected += (parseFloat(c.price) || 0);
-        if (!c.cleaned) forecasted += (parseFloat(c.price) || 0);
+        if (!c.cleaned && !c.skipped) forecasted += (parseFloat(c.price) || 0);
 
         const arrData = window.getArrearsData(c);
-        if(arrData.isOwed) { 
-            totalArrears += arrData.total; 
-            arrearsListHtml += `<div class="CMD-detail-row"><span>${escapeHTML(c.name)} <small style="opacity:0.7;">${escapeHTML(arrData.monthsString)}</small></span><span>£${arrData.total.toFixed(2)}</span></div>`; 
-        }
+        if(arrData.isOwed) totalArrears += arrData.total; 
     });
 
     db.expenses.forEach(e => spend += (parseFloat(e.amt) || 0));
@@ -947,34 +942,45 @@ window.renderFinances = () => {
         }
     });
 
-    let arrearsSection = ''; 
-    if (totalArrears > 0) { arrearsSection = `<div class="FIN-arrears-card"><div style="font-size:20px; margin-bottom:15px;">⚠️ OUTSTANDING: £${totalArrears.toFixed(2)}</div><div style="text-align:left; background:rgba(0,0,0,0.15); padding:15px; border-radius:20px; max-height:150px; overflow-y:auto;">${arrearsListHtml}</div></div>`; }
-    
-    let htmlBuilder = `<div class="FIN-hero-iron"><small style="opacity:0.5; font-weight:900;">NET PROFIT</small><div>£${(income - spend).toFixed(2)}</div></div>`;
-    htmlBuilder += arrearsSection;
-    htmlBuilder += `<div style="padding: 0 25px; margin-bottom: 5px; font-weight: 950; font-size: 14px; color: var(--accent); display: flex; justify-content: space-between;"><span>COLLECTION PROGRESS</span><span>${Math.round(progressPct)}%</span></div>`;
-    htmlBuilder += `<div class="FIN-progress-wrap"><div class="FIN-progress-fill" style="width: ${progressPct}%;"></div></div>`;
-    htmlBuilder += `<div class="FIN-bubble-row"><div class="FIN-bubble income"><div class="bubble-icon">📈</div><div class="bubble-info"><small>INCOME</small><strong>£${income.toFixed(2)}</strong></div></div><div class="FIN-bubble spent"><div class="bubble-icon">📉</div><div class="bubble-info"><small>SPENT</small><strong>£${spend.toFixed(2)}</strong></div></div></div>`;
-    
-    dash.innerHTML = htmlBuilder;
+    const netProfit = income - spend;
 
-    splitDash.innerHTML = `
-        <div class="FIN-bubble-row" style="margin-top:-10px;">
-            <div class="FIN-bubble" style="padding:10px;">
-                <div class="bubble-icon" style="width:30px;height:30px;font-size:16px;">💵</div>
-                <div class="bubble-info"><small>CASH IN HAND</small><strong style="font-size:14px;">£${cashTotal.toFixed(2)}</strong></div>
+    blackCard.innerHTML = `
+        <div class="fbc-title">Net Profit</div>
+        <div class="fbc-balance">£${netProfit.toFixed(2)}</div>
+        <div class="fbc-split-row">
+            <div class="fbc-split-item">
+                <span class="fbc-split-label">💵 Cash in Hand</span>
+                <span class="fbc-split-val">£${cashTotal.toFixed(2)}</span>
             </div>
-            <div class="FIN-bubble" style="padding:10px;">
-                <div class="bubble-icon" style="width:30px;height:30px;font-size:16px;">🏦</div>
-                <div class="bubble-info"><small>BANKED</small><strong style="font-size:14px;">£${bankTotal.toFixed(2)}</strong></div>
+            <div class="fbc-split-item" style="text-align: right; align-items: flex-end;">
+                <span class="fbc-split-label">Banked 🏦</span>
+                <span class="fbc-split-val">£${bankTotal.toFixed(2)}</span>
             </div>
+        </div>
+    `;
+
+    bentoBox.innerHTML = `
+        <div class="fin-bento-card">
+            <div class="fbc-icon-wrap fbc-green">📈</div>
+            <div><div class="fin-bento-lbl">Income</div><div class="fin-bento-val">£${income.toFixed(2)}</div></div>
+        </div>
+        <div class="fin-bento-card">
+            <div class="fbc-icon-wrap fbc-red">📉</div>
+            <div><div class="fin-bento-lbl">Spent</div><div class="fin-bento-val">£${spend.toFixed(2)}</div></div>
+        </div>
+        <div class="fin-bento-card">
+            <div class="fbc-icon-wrap fbc-orange">⚠️</div>
+            <div><div class="fin-bento-lbl">Arrears</div><div class="fin-bento-val">£${totalArrears.toFixed(2)}</div></div>
+        </div>
+        <div class="fin-bento-card">
+            <div class="fbc-icon-wrap fbc-blue">🎯</div>
+            <div><div class="fin-bento-lbl">Collected</div><div class="fin-bento-val">${Math.round(progressPct)}%</div></div>
         </div>
     `;
     
     const ctx = document.getElementById('financeChartCanvas');
     if (ctx && typeof Chart !== 'undefined') {
         if (financeChartInstance) financeChartInstance.destroy(); 
-        
         let labels = [`Collected: £${income.toFixed(2)}`, `Debt: £${totalArrears.toFixed(2)}`, `Forecasted: £${forecasted.toFixed(2)}`]; 
         let chartData = [income, totalArrears, forecasted]; 
         let colors = ['#34C759', '#ff453a', '#007aff'];
@@ -982,7 +988,7 @@ window.renderFinances = () => {
         
         if (income > 0 || totalArrears > 0 || forecasted > 0) {
             financeChartInstance = new Chart(ctx, { 
-                type: 'doughnut', plugins: [arc3DPlugin], 
+                type: 'doughnut', 
                 data: { labels: labels, datasets: [{ data: chartData, backgroundColor: colors, borderWidth: 4, borderColor: isDarkMode ? '#1c1c1e' : '#ffffff', borderRadius: 15, hoverOffset: 6, spacing: 5 }] }, 
                 options: { 
                     responsive: true, maintainAspectRatio: false, cutout: '75%', layout: { padding: 10 },
@@ -995,23 +1001,31 @@ window.renderFinances = () => {
         }
     }
     
-    let statementHtml = ''; 
     if (db.expenses.length === 0) { 
-        statementHtml = `<div class="empty-state"><span class="empty-icon">🧾</span><div class="empty-text">No Expenses Yet</div><div class="empty-sub">Your ledger is completely clean.</div></div>`; 
+        ledger.innerHTML = `<div class="empty-state" style="padding-top:20px;"><span class="empty-icon">🧾</span><div class="empty-text">No Expenses Yet</div><div class="empty-sub">Your ledger is completely clean.</div></div>`; 
     } else { 
-        let tableRows = '';
-        let reversedExpenses = [...db.expenses].reverse();
-        reversedExpenses.forEach(item => {
+        let ledgerHtml = '';
+        [...db.expenses].reverse().forEach(item => {
             let catIcon = "🏢"; 
             if(item.cat === 'Fuel') catIcon = "⛽"; 
             if(item.cat === 'Equipment') catIcon = "🧽"; 
             if(item.cat === 'Food') catIcon = "🍔"; 
             if(item.cat === 'Marketing') catIcon = "📣"; 
-            tableRows += `<tr><td style="width: 40px; font-size: 24px; text-align: center; padding-left: 0;">${catIcon}</td><td><div style="display:flex; flex-direction:column;"><span style="color:var(--text);">${escapeHTML(item.desc)}</span><small style="opacity:0.5; font-size:11px;">${escapeHTML(item.date)}</small></div></td><td style="text-align: right; color: var(--danger); padding-right: 0;">-£${parseFloat(item.amt).toFixed(2)}</td></tr>`; 
+            
+            ledgerHtml += `
+            <div class="ledger-item">
+                <div class="ledger-left">
+                    <div class="ledger-icon">${catIcon}</div>
+                    <div class="ledger-details">
+                        <span class="ledger-desc">${escapeHTML(item.desc)}</span>
+                        <span class="ledger-date">${escapeHTML(item.date)}</span>
+                    </div>
+                </div>
+                <div class="ledger-amt">-£${parseFloat(item.amt).toFixed(2)}</div>
+            </div>`;
         }); 
-        statementHtml = `<div class="FIN-ledger-card"><div class="FIN-ledger-wrapper"><table class="FIN-ledger-table"><thead><tr><th style="padding-left: 0;">Cat</th><th>Details</th><th style="text-align: right; padding-right: 0;">Amt</th></tr></thead><tbody>${tableRows}</tbody></table></div><div class="FIN-ledger-total"><span>TOTAL EXPENSES</span><span>-£${spend.toFixed(2)}</span></div></div>`; 
+        ledger.innerHTML = ledgerHtml; 
     }
-    ledger.innerHTML = statementHtml;
 };
 
 const getIcon = (code) => {
