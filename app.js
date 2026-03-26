@@ -5,7 +5,6 @@ const W_API_KEY = "4c00e61833ea94d3c4a1bff9d2c32969";
 
 let db = { customers: [], expenses: [], history: [], bank: { name: '', acc: '' } };
 
-// ✨ NEW: Auto-save Memory logic for curWeek and workingDay ✨
 let curWeek = parseInt(localStorage.getItem('HP_curWeek')) || 1; 
 let workingDay = localStorage.getItem('HP_workingDay');
 if (!workingDay) {
@@ -68,7 +67,7 @@ if ('serviceWorker' in navigator) {
 
 const escapeHTML = (str) => {
     if (!str) return '';
-    return String(str).replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, '"').replace(/'/g, "'"); 
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); 
 };
 
 window.getArrearsData = (c) => {
@@ -108,6 +107,8 @@ const initPTR = () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log("Ultimate Hydro Pro v2.1 Booting...");
+    
     try {
         await idb.init(); 
         let savedData = await idb.get('master_db');
@@ -130,12 +131,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const bNameEl = document.getElementById('bName'); const bAccEl = document.getElementById('bAcc');
     if(bNameEl) bNameEl.value = db.bank.name; if(bAccEl) bAccEl.value = db.bank.acc;
 
-    // Apply the remembered UI state to the Route tab buttons
     document.querySelectorAll('.WEE-day-btn').forEach(b => b.classList.remove('active'));
     const activeDayBtn = document.getElementById(`day-${workingDay}`);
     if(activeDayBtn) activeDayBtn.classList.add('active');
     
-    document.querySelectorAll('.segment').forEach(b => { if(b.id.startsWith('wk-btn-')) b.classList.remove('active'); });
+    document.querySelectorAll('.segment').forEach(b => { if(b.id && b.id.startsWith('wk-btn-')) b.classList.remove('active'); });
     const activeWkBtn = document.getElementById(`wk-btn-${curWeek}`);
     if(activeWkBtn) activeWkBtn.classList.add('active');
 
@@ -189,14 +189,20 @@ window.openTab = (id, btnId = null) => {
 
 window.renderAllSafe = () => {
     try {
-        if(document.getElementById('home-root').classList.contains('active')) renderHome();
-        if(document.getElementById('master-root').classList.contains('active')) renderMaster();
-        if(document.getElementById('finances-root').classList.contains('active')) renderFinances();
-        if(document.getElementById('week-view-root').classList.contains('active')) renderWeek();
+        const home = document.getElementById('home-root');
+        if(home && home.classList.contains('active')) renderHome();
+        
+        const master = document.getElementById('master-root');
+        if(master && master.classList.contains('active')) renderMaster();
+        
+        const finances = document.getElementById('finances-root');
+        if(finances && finances.classList.contains('active')) renderFinances();
+        
+        const week = document.getElementById('week-view-root');
+        if(week && week.classList.contains('active')) renderWeek();
     } catch (err) { console.error("Render Error:", err); }
 };
 
-// ✨ NEW: RENDER HOME DASHBOARD ✨
 window.renderHome = () => {
     const dateOptions = { weekday: 'long', month: 'long', day: 'numeric' };
     document.getElementById('home-date').innerText = new Date().toLocaleDateString('en-GB', dateOptions).toUpperCase();
@@ -366,8 +372,9 @@ window.setWorkingWeek = (num) => {
     triggerHaptic(); 
     curWeek = num; 
     localStorage.setItem('HP_curWeek', curWeek);
-    document.querySelectorAll('.segment').forEach(b => { if(b.id.startsWith('wk-btn-')) b.classList.remove('active'); });
-    document.getElementById(`wk-btn-${num}`).classList.add('active');
+    document.querySelectorAll('.segment').forEach(b => { if(b.id && b.id.startsWith('wk-btn-')) b.classList.remove('active'); });
+    const wkBtn = document.getElementById(`wk-btn-${num}`);
+    if(wkBtn) wkBtn.classList.add('active');
     renderWeek(); 
 };
 
@@ -376,11 +383,10 @@ window.setWorkingDay = (day, btn) => {
     workingDay = day; 
     localStorage.setItem('HP_workingDay', workingDay);
     document.querySelectorAll('.WEE-day-btn').forEach(b => b.classList.remove('active')); 
-    btn.classList.add('active'); 
+    if(btn) btn.classList.add('active'); 
     renderWeek(); 
 };
 
-// Kept viewWeek for backwards compatibility if needed, but UI uses setWorkingWeek now
 window.viewWeek = (num) => { setWorkingWeek(num); };
 
 const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -915,7 +921,6 @@ async function initWeather() {
                 const currentIcon = getIcon(data.weather[0].icon);
                 const currentDesc = data.weather[0].description;
                 
-                // ✨ Update Home Weather Pill
                 const hwIcon = document.getElementById('hw-icon');
                 const hwTemp = document.getElementById('hw-temp');
                 const hwDesc = document.getElementById('hw-desc');
