@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v2.0</title>
+    <title>Ultimate Hydro Pro v2.1</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=20">
+    <link rel="stylesheet" href="styles.css?v=21">
 </head>
 <body class="light-mode">
 
@@ -72,7 +72,6 @@
         </section>
         
         <section id="week-view-root" class="tab-content" data-title="Route">
-            
             <div class="WEE-day-selector" style="padding-top: 5px;">
                 <button class="WEE-day-btn active" id="day-Mon" onclick="setWorkingDay('Mon', this)">M</button>
                 <button class="WEE-day-btn" id="day-Tue" onclick="setWorkingDay('Tue', this)">T</button>
@@ -179,7 +178,7 @@
                 </div>
                 <button class="ADM-util-btn green" onclick="cmdCycleMonth()">🚀 START NEW MONTH</button>
                 <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v2.0</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v2.1</footer>
             </div>
         </section>
 
@@ -211,23 +210,13 @@
             <div class="ADM-row">
                 <span>📅</span>
                 <select id="cWeek">
-                    <option value="1">Week 1</option>
-                    <option value="2">Week 2</option>
-                    <option value="3">Week 3</option>
-                    <option value="4">Week 4</option>
-                    <option value="5">Week 5</option>
+                    <option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option><option value="4">Week 4</option><option value="5">Week 5</option>
                 </select>
             </div>
             <div class="ADM-row">
                 <span>📆</span>
                 <select id="cDay">
-                    <option value="Mon">Monday</option>
-                    <option value="Tue">Tuesday</option>
-                    <option value="Wed">Wednesday</option>
-                    <option value="Thu">Thursday</option>
-                    <option value="Fri">Friday</option>
-                    <option value="Sat">Saturday</option>
-                    <option value="Sun">Sunday</option>
+                    <option value="Mon">Monday</option><option value="Tue">Tuesday</option><option value="Wed">Wednesday</option><option value="Thu">Thursday</option><option value="Fri">Friday</option><option value="Sat">Saturday</option><option value="Sun">Sunday</option>
                 </select>
             </div>
             <div class="ADM-row" style="border-bottom:none; height: auto!important; align-items: flex-start; padding-top: 15px;">
@@ -301,6 +290,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20" defer></script>
+    <script src="app.js?v=21" defer></script>
 </body>
 </html>
