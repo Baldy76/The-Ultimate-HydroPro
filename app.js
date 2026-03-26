@@ -89,7 +89,6 @@ window.getArrearsData = (c) => {
     return { isOwed: totalOwed > 0.01, total: totalOwed, monthsString: breakdown.map(b => b.month).join(', '), breakdown: breakdown };
 };
 
-// --- ✨ NEW: PULL TO REFRESH WEATHER LOGIC ✨ ---
 let wthStartY = 0;
 let wthContainer = null;
 let ptrIndicator = null;
@@ -151,9 +150,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const bNameEl = document.getElementById('bName'); const bAccEl = document.getElementById('bAcc');
     if(bNameEl) bNameEl.value = db.bank.name; if(bAccEl) bAccEl.value = db.bank.acc;
 
-    renderAllSafe(); 
-    initWeather();
-    initPTR();
+    renderAllSafe(); initWeather(); initPTR();
 
     const weekView = document.getElementById('week-view-root');
     if(weekView) {
@@ -287,12 +284,13 @@ window.saveCustomer = () => {
             showToast(`${name} updated`, "success");
         }
     } else {
-        // ✨ Phase 5 Add: Give new customers an 'order' property for routing
+        // ✨ Added c.skipped state hook ✨
         db.customers.push({ 
             id: Date.now().toString(), 
             order: Date.now(), 
             ...newDetails,
             cleaned: false, 
+            skipped: false,
             paidThisMonth: 0, 
             pastArrears: []
         });
@@ -354,7 +352,8 @@ window.cmdCycleMonth = () => {
                 if (!c.pastArrears) c.pastArrears = []; 
                 c.pastArrears.push({ month: cycleMonth, amt: price - paid }); 
             } 
-            c.cleaned = false; c.paidThisMonth = 0; 
+            c.cleaned = false; c.skipped = false; // ✨ Reset skip state! ✨
+            c.paidThisMonth = 0; 
         }); 
         db.expenses = []; saveData(); location.reload();
     });
@@ -424,26 +423,24 @@ const handleSwipe = () => {
     }
 };
 
-// --- ✨ PHASE 5: GESTURE FACTORY ✨ ---
 const attachSwipeGestures = (wrap, fg, cId) => {
     let startX = 0;
     let currentX = 0;
     let isSwiping = false;
 
     fg.addEventListener('touchstart', e => {
-        if(e.target.closest('.drag-handle')) return; // Ignore if touching the grip
+        if(e.target.closest('.drag-handle') || e.target.closest('.quick-action-btn')) return; 
         startX = e.touches[0].clientX;
         fg.classList.add('swiping');
     }, {passive: true});
 
     fg.addEventListener('touchmove', e => {
-        if(e.target.closest('.drag-handle')) return;
+        if(e.target.closest('.drag-handle') || e.target.closest('.quick-action-btn')) return;
         currentX = e.touches[0].clientX;
         let diff = currentX - startX;
         
         if (Math.abs(diff) > 10) isSwiping = true;
 
-        // Dampen swipe length
         if (diff > 75) diff = 75 + (diff - 75) * 0.2;
         if (diff < -75) diff = -75 + (diff + 75) * 0.2;
 
@@ -451,7 +448,7 @@ const attachSwipeGestures = (wrap, fg, cId) => {
     }, {passive: true});
 
     fg.addEventListener('touchend', e => {
-        if(e.target.closest('.drag-handle')) return;
+        if(e.target.closest('.drag-handle') || e.target.closest('.quick-action-btn')) return;
         let diff = currentX - startX;
         fg.classList.remove('swiping');
         fg.style.transform = `translate3d(0, 0, 0)`;
@@ -461,13 +458,12 @@ const attachSwipeGestures = (wrap, fg, cId) => {
             else if (diff < -55) { cmdSettlePaid(cId, 'job'); }
         }
         
-        // Prevent click if we actually swiped
         setTimeout(() => { isSwiping = false; }, 100);
         startX = 0; currentX = 0;
     });
 
     fg.addEventListener('click', e => {
-        if(!isSwiping && !e.target.closest('.drag-handle')) {
+        if(!isSwiping && !e.target.closest('.drag-handle') && !e.target.closest('.quick-action-btn')) {
             showJobBriefing(cId);
         }
     });
@@ -485,7 +481,7 @@ const attachDragDrop = (wrap, listContainer) => {
 
     handle.addEventListener('touchmove', e => {
         if (!isDragging) return;
-        e.preventDefault(); // Stop screen from scrolling!
+        e.preventDefault(); 
 
         const touchY = e.touches[0].clientY;
         const siblings = [...listContainer.querySelectorAll('.swipe-wrapper:not(.dragging)')];
@@ -508,25 +504,55 @@ const attachDragDrop = (wrap, listContainer) => {
         wrap.classList.remove('dragging');
         triggerHaptic();
 
-        // Save the new Route Order!
         const newOrderEls = [...listContainer.querySelectorAll('.swipe-wrapper')];
         newOrderEls.forEach((el, index) => {
             const customer = db.customers.find(c => c.id === el.dataset.id);
-            if(customer) customer.order = index; // Re-index based on DOM position
+            if(customer) customer.order = index; 
         });
         saveData();
     });
 };
 
+// ✨ NEW: Quick Action Handlers ✨
+window.cmdQuickCall = (phone, e) => {
+    e.stopPropagation();
+    triggerHaptic();
+    if(!phone) return showToast("No phone number saved.", "error");
+    window.location.href = `tel:${escapeHTML(phone)}`;
+};
+
+window.cmdQuickRoute = (id, e) => {
+    e.stopPropagation();
+    triggerHaptic();
+    const c = db.customers.find(x => x.id === id); if(!c) return;
+    const mapQuery = encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`);
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=$${mapQuery}`, '_blank');
+};
+
+// ✨ NEW: Skip Toggle Logic ✨
+window.cmdToggleSkip = (id) => {
+    triggerHaptic();
+    const c = db.customers.find(x => x.id === id);
+    c.skipped = !c.skipped;
+    if(c.skipped) c.cleaned = false; 
+    saveData(); renderAllSafe(); closeBriefing();
+    showToast(c.skipped ? "Job Skipped ⏭️" : "Skip Removed", "normal");
+};
+
 window.renderWeek = () => { 
     const list = document.getElementById('WEE-list-container'); if(!list) return; list.innerHTML = '';
     
-    // Sort based on their custom route order!
+    // ✨ NEW: Sort Active jobs first, Skipped jobs forced to the bottom ✨
     let customersToday = db.customers
         .filter(c => c.week == curWeek && c.day == workingDay)
-        .sort((a, b) => (a.order || 0) - (b.order || 0));
-    
+        .sort((a, b) => {
+            if (a.skipped === b.skipped) return (a.order || 0) - (b.order || 0);
+            return a.skipped ? 1 : -1;
+        });
+
+    const progressDash = document.getElementById('WEE-progress-dashboard');
     if(customersToday.length === 0) {
+        progressDash.innerHTML = '';
         list.innerHTML = `<div class="empty-state">
             <span class="empty-icon">🏖️</span>
             <div class="empty-text">Zero Jobs Today</div>
@@ -536,12 +562,23 @@ window.renderWeek = () => {
         return;
     }
 
+    // ✨ NEW: The Daily Motivation Engine (Progress Calculation) ✨
+    let completedCount = customersToday.filter(c => c.cleaned || c.skipped).length;
+    let totalCount = customersToday.length;
+    let pct = totalCount === 0 ? 0 : (completedCount / totalCount) * 100;
+    let dailyValue = customersToday.filter(c => c.cleaned).reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
+
+    progressDash.innerHTML = `
+        <div class="WEE-progress-wrap"><div class="WEE-progress-fill" style="width: ${pct}%;"></div></div>
+        <div class="WEE-progress-text">${completedCount} of ${totalCount} Done • £${dailyValue.toFixed(2)} Cleaned Today</div>
+    `;
+
     customersToday.forEach(c => {
         const arrData = window.getArrearsData(c);
         const cleanBadge = c.cleaned ? `<span class="CST-badge badge-clean">✅ CLEANED</span>` : '';
         const arrearsBadge = arrData.isOwed ? `<span class="CST-badge badge-unpaid">❌ OWES £${arrData.total.toFixed(2)}</span>` : `<span class="CST-badge badge-paid">✅ PAID</span>`;
+        const skipBadge = c.skipped ? `<span class="CST-badge badge-unpaid" style="background: rgba(255, 149, 0, 0.15); color: #cc7700;">⏭️ SKIPPED</span>` : '';
         
-        // Build the physical DOM elements so we can attach listeners safely
         const wrap = document.createElement('div');
         wrap.className = 'swipe-wrapper';
         wrap.dataset.id = c.id;
@@ -551,15 +588,19 @@ window.renderWeek = () => {
         bg.innerHTML = `<div class="action-left">✅</div><div class="action-right">💰</div>`;
 
         const fg = document.createElement('div');
-        fg.className = 'swipe-fg';
+        fg.className = `swipe-fg CST-card-item ${c.skipped ? 'skipped-card' : ''}`;
+        
+        // ✨ NEW: Injected the Quick Action Buttons next to the price ✨
         fg.innerHTML = `
             <div style="flex:1;">
                 <strong style="font-size:20px; display:block;">${escapeHTML(c.name)}</strong>
                 <small style="color:var(--accent); font-weight:800; display:block;">${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}</small>
-                <div class="CST-card-badges">${cleanBadge} ${arrearsBadge}</div>
+                <div class="CST-card-badges">${cleanBadge} ${arrearsBadge} ${skipBadge}</div>
             </div>
-            <div style="font-weight:950; font-size:22px; display:flex; align-items:center;">
-                £${(parseFloat(c.price)||0).toFixed(2)}
+            <div style="display:flex; align-items:center; gap: 8px;">
+                <span class="price-text" style="font-weight:950; font-size:22px;">£${(parseFloat(c.price)||0).toFixed(2)}</span>
+                <button class="quick-action-btn" onclick="cmdQuickRoute('${c.id}', event)">📍</button>
+                <button class="quick-action-btn" onclick="cmdQuickCall('${c.phone}', event)">📞</button>
                 <div class="drag-handle">≡</div>
             </div>`;
         
@@ -567,7 +608,6 @@ window.renderWeek = () => {
         wrap.appendChild(fg);
         list.appendChild(wrap);
 
-        // Attach physics to the cards!
         attachSwipeGestures(wrap, fg, c.id);
         attachDragDrop(wrap, list);
     });
@@ -575,12 +615,12 @@ window.renderWeek = () => {
 
 window.routeMyDay = () => {
     triggerHaptic();
-    // Google Maps will now respect your custom drag & drop order!
+    // Exclude skipped customers from routing!
     let todaysJobs = db.customers
-        .filter(c => c.week == curWeek && c.day == workingDay)
+        .filter(c => c.week == curWeek && c.day == workingDay && !c.skipped)
         .sort((a, b) => (a.order || 0) - (b.order || 0));
         
-    if(todaysJobs.length === 0) return showToast("No jobs to route today!", "error");
+    if(todaysJobs.length === 0) return showToast("No active jobs to route today!", "error");
     if(todaysJobs.length > 10) showToast("Routing limited to first 10 stops.", "normal");
     
     let stops = todaysJobs.slice(0, 10).map(c => encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`));
@@ -652,6 +692,7 @@ window.showJobBriefing = (id) => {
             <button class="CMD-action-btn pay" onclick="cmdSettlePaid('${c.id}', 'job')"><span style="font-size:24px;">💰</span> <br>COLLECT £</button>
             <button class="CMD-action-btn route" onclick="window.open('${navUrl}', '_blank')"><span style="font-size:24px;">📍</span> <br>NAVIGATE</button>
             <button class="CMD-action-btn call" onclick="window.location.href='tel:${escapeHTML(c.phone)}'"><span style="font-size:24px;">📞</span> <br>CALL</button>
+            <button class="CMD-action-btn skip" onclick="cmdToggleSkip('${c.id}')"><span style="font-size:24px;">⏭️</span> <br>${c.skipped ? 'UNSKIP' : 'SKIP JOB'}</button>
             <button class="CMD-action-btn whatsapp" onclick="cmdWhatsApp('${c.id}')"><span style="font-size:24px;">💬</span> <br>WA REC</button>
             <button class="CMD-action-btn sms" onclick="cmdSMS('${c.id}')"><span style="font-size:24px;">📱</span> <br>SMS REC</button>
         </div>
@@ -693,10 +734,8 @@ window.cmdToggleClean = (id) => {
     triggerHaptic();
     const c = db.customers.find(x => x.id === id); 
     c.cleaned = !c.cleaned; 
-    window.saveData(); window.renderAllSafe(); 
-    
-    // Close briefing if it's open
-    document.getElementById('briefingModal').classList.add('hidden');
+    if(c.cleaned) c.skipped = false; // Cannot be both clean and skipped
+    window.saveData(); window.renderAllSafe(); window.showJobBriefing(id); 
     showToast(c.cleaned ? "Marked as Cleaned ✅" : "Clean Undone", "success");
 };
 
