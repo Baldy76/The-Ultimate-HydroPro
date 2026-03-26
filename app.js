@@ -12,9 +12,33 @@ let currentPayId = null;
 let currentPayContext = null;
 let currentPayTotal = 0;
 let confirmCallback = null; 
-
-// ✨ NEW: Arrears filter state
 let showArrearsOnly = false;
+
+// --- ✨ PHASE 3: THE V8 INDEXED DB ENGINE ✨ ---
+const idb = {
+    db: null,
+    init: () => new Promise((resolve, reject) => {
+        const req = indexedDB.open('HydroPro_V3_DB', 1);
+        req.onupgradeneeded = e => {
+            e.target.result.createObjectStore('appData');
+        };
+        req.onsuccess = e => { idb.db = e.target.result; resolve(); };
+        req.onerror = e => reject(e);
+    }),
+    get: (key) => new Promise(resolve => {
+        const req = idb.db.transaction('appData', 'readonly').objectStore('appData').get(key);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(null);
+    }),
+    set: (key, val) => new Promise(resolve => {
+        const req = idb.db.transaction('appData', 'readwrite').objectStore('appData').put(val, key);
+        req.onsuccess = () => resolve();
+    }),
+    clear: () => new Promise(resolve => {
+        const req = idb.db.transaction('appData', 'readwrite').objectStore('appData').clear();
+        req.onsuccess = () => resolve();
+    })
+};
 
 const triggerHaptic = () => {
     if (navigator.vibrate) navigator.vibrate(40);
@@ -41,15 +65,14 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// Bulletproof HTML escaping
 const escapeHTML = (str) => {
     if (!str) return '';
     return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;'); 
+        .replace(/&/g, '&')
+        .replace(/</g, '<')
+        .replace(/>/g, '>')
+        .replace(/"/g, '"')
+        .replace(/'/g, '''); 
 };
 
 window.getArrearsData = (c) => {
@@ -66,42 +89,29 @@ window.getArrearsData = (c) => {
     return { isOwed: totalOwed > 0.01, total: totalOwed, monthsString: breakdown.map(b => b.month).join(', '), breakdown: breakdown };
 };
 
-// ✨ NEW: SWIPE GESTURE LOGIC FOR THE WEEKS TAB ✨
-const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-let touchStartX = 0;
-let touchEndX = 0;
-
-const handleSwipe = () => {
-    const swipeDistance = touchStartX - touchEndX;
-    const minSwipe = 60; // Needs to be a deliberate swipe
-    
-    if (Math.abs(swipeDistance) > minSwipe) {
-        let currentIndex = daysOfWeek.indexOf(workingDay);
-        if (swipeDistance > 0) {
-            // Swiped left (Go to Next Day)
-            if (currentIndex < daysOfWeek.length - 1) currentIndex++;
-        } else {
-            // Swiped right (Go to Prev Day)
-            if (currentIndex > 0) currentIndex--;
-        }
-        
-        // Find the button and physically click it to update UI
-        const btns = document.querySelectorAll('.WEE-day-btn');
-        if(btns[currentIndex]) btns[currentIndex].click(); 
-    }
-};
-
-document.addEventListener('DOMContentLoaded', () => {
+// --- ✨ DATA ENGINE BOOT SEQUENCE ✨ ---
+document.addEventListener('DOMContentLoaded', async () => {
     try {
-        const saved = localStorage.getItem(DB_KEY);
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            db.customers = parsed.customers || [];
-            db.expenses = parsed.expenses || [];
-            db.history = parsed.history || [];
-            db.bank = parsed.bank || { name: '', acc: '' };
+        await idb.init(); // Fire up IndexedDB
+        let savedData = await idb.get('master_db');
+        
+        // Auto-Migration Bridge from LocalStorage
+        if (!savedData) {
+            const legacyData = localStorage.getItem(DB_KEY);
+            if (legacyData) {
+                console.log("Legacy Data found. Migrating to IndexedDB V8 Engine...");
+                savedData = JSON.parse(legacyData);
+                await idb.set('master_db', savedData);
+            }
         }
-    } catch(err) { console.error("Database Boot Error."); }
+
+        if (savedData) {
+            db.customers = savedData.customers || [];
+            db.expenses = savedData.expenses || [];
+            db.history = savedData.history || [];
+            db.bank = savedData.bank || { name: '', acc: '' };
+        }
+    } catch(err) { console.error("V8 Engine Boot Error:", err); }
 
     applyTheme(localStorage.getItem('HP_Theme') === 'true');
     const bNameEl = document.getElementById('bName'); const bAccEl = document.getElementById('bAcc');
@@ -109,7 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderAllSafe(); initWeather();
 
-    // Attach Swipe Listeners
     const weekView = document.getElementById('week-view-root');
     if(weekView) {
         weekView.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
@@ -136,7 +145,8 @@ window.setThemeMode = (isDark) => {
     if(document.getElementById('finances-root').classList.contains('active')) renderFinances();
 };
 
-window.saveData = () => localStorage.setItem(DB_KEY, JSON.stringify(db));
+// FIRE AND FORGET ASYNC SAVING. NO MORE UI LAG.
+window.saveData = () => { idb.set('master_db', db); };
 
 window.openTab = (id, btnEl = null) => {
     triggerHaptic();
@@ -250,25 +260,23 @@ window.cmdCycleMonth = () => {
 };
 
 window.cmdNuclear = () => {
-    showConfirm("FACTORY RESET?", "This will permanently delete all customer data, finances, and settings.", () => {
-        localStorage.removeItem(DB_KEY); location.reload();
+    showConfirm("FACTORY RESET?", "This will permanently delete all customer data, finances, and settings.", async () => {
+        await idb.clear();
+        localStorage.removeItem(DB_KEY); 
+        location.reload();
     });
 };
 
 window.exportToQuickBooks = () => { triggerHaptic(); let csv = "Date,Description,Amount,Type,Category\n"; const today = new Date().toLocaleDateString('en-GB'); db.customers.forEach(c => { if(parseFloat(c.paidThisMonth) > 0) csv += `${today},Income: ${escapeHTML(c.name)},${c.paidThisMonth},Income,Service\n`; }); db.expenses.forEach(e => { csv += `${e.date},${escapeHTML(e.desc)},${e.amt},Expense,${escapeHTML(e.cat) || 'Other'}\n`; }); const blob = new Blob([csv], { type: 'text/csv' }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "HydroPro_QuickBooks.csv"; link.click(); };
 window.exportData = () => { triggerHaptic(); const blob = new Blob([JSON.stringify(db)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "HydroPro_Backup.json"; link.click(); };
-window.importData = (event) => { const reader = new FileReader(); reader.onload = (e) => { try { const imported = JSON.parse(e.target.result); db.customers = imported.customers || []; db.expenses = imported.expenses || []; db.history = imported.history || []; db.bank = imported.bank || { name: '', acc: '' }; saveData(); showToast("Data Restored Successfully", "success"); setTimeout(() => location.reload(), 1500); } catch (err) { showToast("Invalid Format File", "error"); } }; reader.readAsText(event.target.files[0]); };
+window.importData = (event) => { const reader = new FileReader(); reader.onload = async (e) => { try { const imported = JSON.parse(e.target.result); db.customers = imported.customers || []; db.expenses = imported.expenses || []; db.history = imported.history || []; db.bank = imported.bank || { name: '', acc: '' }; await idb.set('master_db', db); showToast("Data Restored Successfully", "success"); setTimeout(() => location.reload(), 1500); } catch (err) { showToast("Invalid Format File", "error"); } }; reader.readAsText(event.target.files[0]); };
 
-// ✨ NEW: Toggle Arrears Filter Logic ✨
 window.toggleArrearsFilter = () => {
     triggerHaptic();
     showArrearsOnly = !showArrearsOnly;
     const btn = document.getElementById('arrearsFilterBtn');
-    if(showArrearsOnly) {
-        btn.classList.add('active');
-    } else {
-        btn.classList.remove('active');
-    }
+    if(showArrearsOnly) { btn.classList.add('active'); } 
+    else { btn.classList.remove('active'); }
     renderMaster();
 };
 
@@ -279,8 +287,6 @@ window.renderMaster = () => {
     
     db.customers.forEach(c => {
         const arrData = window.getArrearsData(c);
-        
-        // Skip if filter is on and they don't owe money
         if (showArrearsOnly && !arrData.isOwed) return;
 
         if(c.name.toLowerCase().includes(search) || (c.street||"").toLowerCase().includes(search)) {
@@ -292,7 +298,6 @@ window.renderMaster = () => {
         }
     });
     
-    // ✨ NEW: Actionable Empty State ✨
     if (renderedCount === 0) {
         list.innerHTML = `<div class="empty-state">
             <span class="empty-icon">👻</span>
@@ -305,11 +310,23 @@ window.renderMaster = () => {
 window.viewWeek = (num) => { triggerHaptic(); curWeek = num; openTab('week-view-root'); renderWeek(); };
 window.setWorkingDay = (day, btn) => { triggerHaptic(); workingDay = day; document.querySelectorAll('.WEE-day-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderWeek(); };
 
+const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+let touchStartX = 0; let touchEndX = 0;
+const handleSwipe = () => {
+    const swipeDistance = touchStartX - touchEndX;
+    if (Math.abs(swipeDistance) > 60) {
+        let currentIndex = daysOfWeek.indexOf(workingDay);
+        if (swipeDistance > 0 && currentIndex < 6) currentIndex++;
+        else if (swipeDistance < 0 && currentIndex > 0) currentIndex--;
+        const btns = document.querySelectorAll('.WEE-day-btn');
+        if(btns[currentIndex]) btns[currentIndex].click(); 
+    }
+};
+
 window.renderWeek = () => { 
     const list = document.getElementById('WEE-list-container'); if(!list) return; list.innerHTML = '';
     let customersToday = db.customers.filter(c => c.week == curWeek && c.day == workingDay);
     
-    // ✨ NEW: Actionable Empty State ✨
     if(customersToday.length === 0) {
         list.innerHTML = `<div class="empty-state">
             <span class="empty-icon">🏖️</span>
