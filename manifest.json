@@ -1,0 +1,21 @@
+{
+  "name": "Hydro Pro",
+  "short_name": "Hydro Pro",
+  "description": "The Unbreakable Engine for Cleaning Businesses",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f2f2f7",
+  "theme_color": "#007aff",
+  "icons": [
+    {
+      "src": "AppIcon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "AppIcon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
