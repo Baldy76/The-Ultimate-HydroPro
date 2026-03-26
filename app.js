@@ -14,12 +14,10 @@ if (!workingDay) {
 
 let financeChartInstance = null; 
 let currentPayId = null;
-let currentPayContext = null;
 let currentPayTotal = 0;
 let confirmCallback = null; 
 let showArrearsOnly = false;
 let editingCustomerId = null;
-let currentPayMethod = 'Cash'; 
 
 const idb = {
     db: null,
@@ -62,15 +60,15 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// ✨ THE CRITICAL FIX: Syntax-Safe Escaping ✨
+// ✨ THE FATAL BUG FIX: Perfect, syntax-safe HTML entity replacement ✨
 const escapeHTML = (str) => {
     if (!str) return '';
     return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 };
 
 window.getArrearsData = (c) => {
@@ -80,7 +78,8 @@ window.getArrearsData = (c) => {
     let currentOwed = thisMonthCharge - (parseFloat(c.paidThisMonth) || 0);
     let breakdown = pastLog.map(a => ({ month: a.month, amt: parseFloat(a.amt) }));
     if (currentOwed > 0.01) breakdown.push({ month: currentMonthStr, amt: currentOwed });
-    return { isOwed: breakdown.length > 0, total: breakdown.reduce((sum, item) => sum + item.amt, 0), breakdown: breakdown };
+    const totalOwed = breakdown.reduce((sum, item) => sum + item.amt, 0);
+    return { isOwed: totalOwed > 0.01, total: totalOwed, breakdown: breakdown };
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -97,23 +96,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         else if (currentHour >= 17) greeting = "Good Evening.";
         if(document.getElementById('home-greeting')) document.getElementById('home-greeting').innerText = greeting;
 
+        const bNameEl = document.getElementById('bName'); const bAccEl = document.getElementById('bAcc');
+        if(bNameEl && db.bank.name) bNameEl.value = db.bank.name; 
+        if(bAccEl && db.bank.acc) bAccEl.value = db.bank.acc;
+
         renderAllSafe(); initWeather();
     } catch(err) { console.error("Boot Error:", err); }
 });
 
+function applyTheme(isDark) {
+    document.body.classList.toggle('dark-mode', isDark);
+    const meta = document.getElementById('theme-meta'); if(meta) meta.content = isDark ? "#000" : "#f2f2f7";
+}
+
+window.setThemeMode = (isDark) => { triggerHaptic(); applyTheme(isDark); localStorage.setItem('HP_Theme', isDark); renderAllSafe(); };
 window.saveData = () => idb.set('master_db', db);
 
 window.openTab = (id, btnId = null) => {
     triggerHaptic();
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    const titleText = document.getElementById(id).getAttribute('data-title');
-    document.getElementById('dynamic-header-title').innerText = titleText;
+    const target = document.getElementById(id);
+    if(target) { target.classList.add('active'); document.getElementById('dynamic-header-title').innerText = target.getAttribute('data-title'); }
     
     if (btnId) {
         document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('.home-fab').forEach(btn => btn.classList.remove('active'));
-        document.getElementById(btnId).classList.add('active');
+        const b = document.getElementById(btnId); if(b) b.classList.add('active');
     }
     renderAllSafe();
 };
@@ -127,19 +135,28 @@ window.renderAllSafe = () => {
 
 window.renderHome = () => {
     document.getElementById('home-date').innerText = new Date().toLocaleDateString('en-GB', { weekday: 'long', month: 'long', day: 'numeric' }).toUpperCase();
-    let todaysJobs = db.customers.filter(c => String(c.week) === String(curWeek) && c.day === workingDay && !c.skipped);
-    document.getElementById('home-jobs-value').innerText = `£${todaysJobs.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0).toFixed(2)}`;
-    document.getElementById('home-jobs-count').innerText = `${todaysJobs.length} Jobs Scheduled (Wk ${curWeek} ${workingDay})`;
+    let jobsToday = db.customers.filter(c => String(c.week) === String(curWeek) && c.day === workingDay && !c.skipped);
+    document.getElementById('home-jobs-value').innerText = `£${jobsToday.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0).toFixed(2)}`;
+    document.getElementById('home-jobs-count').innerText = `${jobsToday.length} Jobs Scheduled (Wk ${curWeek} ${workingDay})`;
     
     let totalArrears = 0;
     db.customers.forEach(c => { const arr = window.getArrearsData(c); if(arr.isOwed) totalArrears += arr.total; });
     document.getElementById('home-arrears').innerText = `£${totalArrears.toFixed(2)}`;
+    
+    let cashInHand = 0;
+    let currentMonth = new Date().toLocaleString('en-GB', { month: 'short' });
+    db.history.forEach(h => { if(h.date.includes(currentMonth)) cashInHand += parseFloat(h.amt); });
+    document.getElementById('home-cash').innerText = `£${cashInHand.toFixed(2)}`;
 };
 
 window.openAddCustomerModal = (id = null) => {
     editingCustomerId = id;
+    const titleEl = document.getElementById('customerModalTitle');
+    const deleteBtn = document.getElementById('deleteCustomerBtn');
     if (id) {
         const c = db.customers.find(x => x.id === id);
+        titleEl.innerText = "Edit Customer";
+        deleteBtn.classList.remove('hidden');
         document.getElementById('cName').value = c.name;
         document.getElementById('cHouseNum').value = c.houseNum || '';
         document.getElementById('cStreet').value = c.street || '';
@@ -147,36 +164,40 @@ window.openAddCustomerModal = (id = null) => {
         document.getElementById('cPrice').value = c.price;
         document.getElementById('cWeek').value = c.week;
         document.getElementById('cDay').value = c.day;
+        document.getElementById('cNotes').value = c.notes || '';
     } else {
+        titleEl.innerText = "Add Customer";
+        deleteBtn.classList.add('hidden');
         document.getElementById('cName').value = '';
         document.getElementById('cHouseNum').value = '';
         document.getElementById('cStreet').value = '';
         document.getElementById('cPhone').value = '';
         document.getElementById('cPrice').value = '';
+        document.getElementById('cNotes').value = '';
     }
     document.getElementById('addCustomerModal').classList.remove('hidden');
 };
 
-window.closeAddCustomerModal = () => { document.getElementById('addCustomerModal').classList.add('hidden'); };
+window.closeAddCustomerModal = () => document.getElementById('addCustomerModal').classList.add('hidden');
 
 window.saveCustomer = () => {
     const name = document.getElementById('cName').value.trim();
-    if(!name) return showToast("Name required", "error");
+    if(!name) return showToast("Name is required", "error");
     
     const details = {
-        name, houseNum: document.getElementById('cHouseNum').value,
-        street: document.getElementById('cStreet').value,
-        phone: document.getElementById('cPhone').value,
-        price: parseFloat(document.getElementById('cPrice').value) || 0,
-        week: document.getElementById('cWeek').value,
-        day: document.getElementById('cDay').value
+        name, houseNum: document.getElementById('cHouseNum').value, street: document.getElementById('cStreet').value,
+        phone: document.getElementById('cPhone').value, price: parseFloat(document.getElementById('cPrice').value) || 0,
+        week: document.getElementById('cWeek').value, day: document.getElementById('cDay').value,
+        notes: document.getElementById('cNotes').value
     };
 
     if (editingCustomerId) {
         const i = db.customers.findIndex(x => x.id === editingCustomerId);
         db.customers[i] = { ...db.customers[i], ...details };
+        showToast("Updated", "success");
     } else {
         db.customers.push({ id: Date.now().toString(), ...details, cleaned: false, skipped: false, paidThisMonth: 0, pastArrears: [], photos: [] });
+        showToast("Saved", "success");
     }
     
     curWeek = parseInt(details.week); workingDay = details.day;
@@ -191,9 +212,10 @@ window.renderMaster = () => {
     const search = document.getElementById('mainSearch').value.toLowerCase();
     db.customers.forEach(c => {
         if (c.name.toLowerCase().includes(search) || (c.street || '').toLowerCase().includes(search)) {
+            const arr = window.getArrearsData(c);
             const div = document.createElement('div'); div.className = 'CST-card-item';
             div.onclick = () => showCustomerBriefing(c.id);
-            div.innerHTML = `<strong>${escapeHTML(c.name)}</strong><br><small>${escapeHTML(c.street)}</small><div style="float:right; font-weight:900;">£${parseFloat(c.price).toFixed(2)}</div>`;
+            div.innerHTML = `<div><strong>${escapeHTML(c.name)}</strong><br><small>${escapeHTML(c.street)}</small></div><div style="font-weight:900;">£${parseFloat(c.price).toFixed(2)}</div>`;
             list.appendChild(div);
         }
     });
@@ -202,12 +224,16 @@ window.renderMaster = () => {
 window.renderWeek = () => {
     const list = document.getElementById('WEE-list-container'); list.innerHTML = '';
     let jobs = db.customers.filter(c => String(c.week) === String(curWeek) && c.day === workingDay);
-    if(jobs.length === 0) { list.innerHTML = '<div class="empty-state">Zero Jobs Today</div>'; return; }
+    
+    if(jobs.length === 0) {
+        list.innerHTML = '<div class="empty-state">🏖️ Zero Jobs Today</div>';
+        return;
+    }
     
     jobs.forEach(c => {
-        const wrap = document.createElement('div'); wrap.className = 'swipe-wrapper';
-        wrap.innerHTML = `<div class="swipe-fg CST-card-item" onclick="showJobBriefing('${c.id}')"><strong>${escapeHTML(c.name)}</strong><span>£${parseFloat(c.price).toFixed(2)}</span></div>`;
-        list.appendChild(wrap);
+        const div = document.createElement('div'); div.className = 'swipe-wrapper';
+        div.innerHTML = `<div class="swipe-fg CST-card-item" onclick="showJobBriefing('${c.id}')"><div><strong>${escapeHTML(c.name)}</strong><br><small>${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}</small></div><div style="font-weight:950; font-size:18px;">£${parseFloat(c.price).toFixed(2)}</div></div>`;
+        list.appendChild(div);
     });
 };
 
@@ -216,14 +242,12 @@ window.showJobBriefing = (id) => {
     const arr = window.getArrearsData(c);
     document.getElementById('briefingData').innerHTML = `
         <div class="CMD-header"><h2>${escapeHTML(c.name)}</h2></div>
-        <div class="CMD-alert-danger">OWED: £${arr.total.toFixed(2)}</div>
-        <div class="CMD-action-grid" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:15px;">
-            <button class="CMD-action-btn" onclick="cmdToggleClean('${c.id}')">🧼 CLEAN</button>
-            <button class="CMD-action-btn" onclick="cmdSettlePaid('${c.id}', 'job')">💰 PAY</button>
-            <button class="CMD-action-btn" onclick="openAddCustomerModal('${c.id}')">✏️ EDIT</button>
-            <button class="CMD-action-btn whatsapp" onclick="cmdWhatsApp('${c.id}')">💬 WA</button>
-            <button class="CMD-action-btn ai-btn ai-glow-btn" onclick="triggerAI('reply', '${c.id}')">✨ REPLY</button>
-            <button class="CMD-action-btn" onclick="closeBriefing()">❌ CLOSE</button>
+        <div class="CMD-alert-danger" style="margin: 15px 0;">TOTAL OWED: £${arr.total.toFixed(2)}</div>
+        <div class="CMD-action-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <button class="ADM-save-btn" style="margin:0; background:var(--success);" onclick="cmdToggleClean('${c.id}')">${c.cleaned ? 'UNDO CLEAN' : 'MARK CLEAN'}</button>
+            <button class="ADM-save-btn" style="margin:0; background:var(--accent);" onclick="cmdSettlePaid('${c.id}')">LOG PAYMENT</button>
+            <button class="ADM-save-btn" style="margin:0; background:var(--ios-grey); color:black;" onclick="openAddCustomerModal('${c.id}')">EDIT</button>
+            <button class="ADM-save-btn" style="margin:0; background:var(--ios-grey); color:black;" onclick="closeBriefing()">CLOSE</button>
         </div>
     `;
     document.getElementById('briefingModal').classList.remove('hidden');
@@ -231,32 +255,33 @@ window.showJobBriefing = (id) => {
 
 window.showCustomerBriefing = (id) => {
     const c = db.customers.find(x => x.id === id);
+    const arr = window.getArrearsData(c);
     document.getElementById('briefingData').innerHTML = `
         <div class="CMD-header"><h2>${escapeHTML(c.name)}</h2></div>
-        <div class="CMD-details-box" style="background:#eee; padding:15px; border-radius:15px; margin:15px 0;">
+        <div class="CMD-details-box" style="background:var(--ios-grey); padding:15px; border-radius:15px; margin:15px 0;">
             <p><strong>Phone:</strong> ${c.phone || 'N/A'}</p>
-            <p><strong>Schedule:</strong> Wk ${c.week} - ${c.day}</p>
+            <p><strong>Schedule:</strong> Week ${c.week} - ${c.day}</p>
+            <p><strong>Arrears:</strong> £${arr.total.toFixed(2)}</p>
         </div>
-        <button class="ADM-save-btn" onclick="cmdSettlePaid('${c.id}', 'cust')">💰 MANAGE ACCOUNT</button>
-        <button class="ADM-save-btn" onclick="openAddCustomerModal('${c.id}')">✏️ EDIT DETAILS</button>
-        <button class="ADM-save-btn" style="background:#eee; color:#000;" onclick="closeBriefing()">❌ CLOSE</button>
+        <button class="ADM-save-btn" style="background:var(--accent);" onclick="cmdSettlePaid('${c.id}')">COLLECT MONEY</button>
+        <button class="ADM-save-btn" style="margin-top:10px; background:var(--ios-grey); color:black;" onclick="openAddCustomerModal('${c.id}')">EDIT DETAILS</button>
     `;
     document.getElementById('briefingModal').classList.remove('hidden');
 };
 
-window.closeBriefing = () => { document.getElementById('briefingModal').classList.add('hidden'); };
+window.closeBriefing = () => document.getElementById('briefingModal').classList.add('hidden');
 
 window.cmdToggleClean = (id) => {
     const c = db.customers.find(x => x.id === id); c.cleaned = !c.cleaned;
-    saveData(); renderAllSafe(); closeBriefing(); showToast("Clean Status Updated", "success");
+    saveData(); renderAllSafe(); closeBriefing();
 };
 
-window.cmdSettlePaid = (id, ctx) => {
+window.cmdSettlePaid = (id) => {
     currentPayId = id;
     const c = db.customers.find(x => x.id === id);
     const arr = window.getArrearsData(c);
     document.getElementById('pay-name').innerText = c.name;
-    document.getElementById('pay-arrears-box').innerText = `TOTAL OWED: £${arr.total.toFixed(2)}`;
+    document.getElementById('pay-arrears-box').innerText = `OWED: £${arr.total.toFixed(2)}`;
     document.getElementById('paymentModal').classList.remove('hidden');
     closeBriefing();
 };
@@ -268,28 +293,49 @@ window.processPayment = (type) => {
     if(isNaN(amt) || amt <= 0) return;
     c.paidThisMonth += amt;
     db.history.push({ custId: currentPayId, amt, date: new Date().toLocaleDateString('en-GB') });
-    saveData(); renderAllSafe(); closePaymentModal(); showToast(`£${amt} Logged`, "success");
+    saveData(); renderAllSafe(); closePaymentModal(); showToast(`Logged £${amt}`, "success");
 };
 
 window.renderFinances = () => {
-    let inc = 0, exp = 0;
-    db.history.forEach(h => inc += parseFloat(h.amt));
-    db.expenses.forEach(e => exp += parseFloat(e.amt));
-    document.getElementById('FIN-black-card').innerHTML = `<div class="fbc-title">Net Profit</div><div class="fbc-balance">£${(inc-exp).toFixed(2)}</div>`;
-    document.getElementById('FIN-bento-box').innerHTML = `<div class="fin-bento-card">Income: £${inc.toFixed(2)}</div><div class="fin-bento-card">Spent: £${exp.toFixed(2)}</div>`;
+    let income = 0; let spent = 0;
+    db.history.forEach(h => income += parseFloat(h.amt));
+    db.expenses.forEach(e => spent += parseFloat(e.amt));
+    
+    document.getElementById('FIN-black-card').innerHTML = `<div class="fbc-title">Total Net Profit</div><div class="fbc-balance">£${(income - spent).toFixed(2)}</div>`;
+    document.getElementById('FIN-bento-box').innerHTML = `
+        <div class="fin-bento-card">
+            <div class="fin-bento-val">£${income.toFixed(2)}</div>
+            <div class="fin-bento-lbl">Gross Income</div>
+        </div>
+        <div class="fin-bento-card">
+            <div class="fin-bento-val">£${spent.toFixed(2)}</div>
+            <div class="fin-bento-lbl">Expenses</div>
+        </div>
+    `;
 };
 
-window.triggerAI = (type) => {
-    if(!localStorage.getItem('HP_AI_Key')) document.getElementById('aiTeaserModal').classList.remove('hidden');
-    else showToast("AI Engine v3.5 Pending...", "normal");
+window.openExpenseModal = () => document.getElementById('expenseModal').classList.remove('hidden');
+window.closeExpenseModal = () => document.getElementById('expenseModal').classList.add('hidden');
+window.addFinanceExpense = () => {
+    const desc = document.getElementById('mExpDesc').value;
+    const amt = parseFloat(document.getElementById('mExpAmt').value);
+    const cat = document.getElementById('mExpCat').value;
+    if(!desc || isNaN(amt)) return;
+    db.expenses.push({ id: Date.now(), desc, amt, cat, date: new Date().toLocaleDateString('en-GB') });
+    saveData(); closeExpenseModal(); renderFinances();
 };
+
+window.setWorkingWeek = (w) => { curWeek = w; localStorage.setItem('HP_curWeek', w); renderWeek(); };
+window.setWorkingDay = (d, b) => { 
+    workingDay = d; localStorage.setItem('HP_workingDay', d); 
+    document.querySelectorAll('.WEE-day-btn').forEach(x => x.classList.remove('active')); 
+    b.classList.add('active'); renderWeek(); 
+};
+
+window.saveBank = () => { db.bank.name = document.getElementById('bName').value; db.bank.acc = document.getElementById('bAcc').value; saveData(); showToast("Bank Saved", "success"); };
+window.saveSettingsAIKey = () => { localStorage.setItem('HP_AI_Key', document.getElementById('sAIKey').value); showToast("AI Key Saved", "success"); };
+window.triggerAI = (type) => { if(!localStorage.getItem('HP_AI_Key')) document.getElementById('aiTeaserModal').classList.remove('hidden'); else showToast("AI Engine v3.7 Pending..."); };
 window.closeAITeaserModal = () => document.getElementById('aiTeaserModal').classList.add('hidden');
-window.saveModalAIKey = () => { localStorage.setItem('HP_AI_Key', document.getElementById('aiKeyInputModal').value); closeAITeaserModal(); showToast("AI Engine Active!", "success"); };
-window.saveSettingsAIKey = () => { localStorage.setItem('HP_AI_Key', document.getElementById('sAIKey').value); showToast("Key Saved", "success"); };
-
-function applyTheme(isDark) { document.body.classList.toggle('dark-mode', isDark); }
-window.setWorkingWeek = (w) => { curWeek = w; renderWeek(); };
-window.setWorkingDay = (d, b) => { workingDay = d; document.querySelectorAll('.WEE-day-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); renderWeek(); };
 
 async function initWeather() {
     if (navigator.geolocation) {
@@ -297,10 +343,8 @@ async function initWeather() {
             try {
                 const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&appid=${W_API_KEY}&units=metric`);
                 const data = await res.json();
-                if(document.getElementById('hw-temp')) {
-                    document.getElementById('hw-temp').innerText = `${Math.round(data.main.temp)}°C`;
-                    document.getElementById('hw-desc').innerText = data.weather[0].description;
-                }
+                document.getElementById('hw-temp').innerText = `${Math.round(data.main.temp)}°C`;
+                document.getElementById('hw-desc').innerText = data.weather[0].description;
             } catch(e) {}
         });
     }
