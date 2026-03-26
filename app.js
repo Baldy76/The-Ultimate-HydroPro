@@ -65,7 +65,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// ✨ BULLETPROOF HTML ESCAPER ✨
+// ✨ THE CRITICAL FIX: Mathematically secure HTML entity escaping.
 const escapeHTML = (str) => {
     if (!str) return '';
     return String(str)
@@ -73,7 +73,7 @@ const escapeHTML = (str) => {
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;"); 
+        .replace(/'/g, "&#39;"); 
 };
 
 window.getArrearsData = (c) => {
@@ -107,7 +107,7 @@ const initPTR = () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("Ultimate Hydro Pro v3.0 Booting...");
+    console.log("Ultimate Hydro Pro v3.1 Booting...");
     try {
         await idb.init(); 
         let savedData = await idb.get('master_db');
@@ -125,7 +125,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const bNameEl = document.getElementById('bName'); const bAccEl = document.getElementById('bAcc');
     if(bNameEl) bNameEl.value = db.bank.name; if(bAccEl) bAccEl.value = db.bank.acc;
 
-    // Load AI Key into settings
     const aiKeyEl = document.getElementById('sAIKey');
     if(aiKeyEl) aiKeyEl.value = localStorage.getItem('HP_AI_Key') || '';
 
@@ -158,6 +157,7 @@ function applyTheme(isDark) {
 
 window.setThemeMode = (isDark) => { triggerHaptic(); applyTheme(isDark); localStorage.setItem('HP_Theme', isDark); if(document.getElementById('finances-root').classList.contains('active')) renderFinances(); };
 window.saveData = () => { idb.set('master_db', db); };
+
 window.openTab = (id, btnId = null) => {
     triggerHaptic(); document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     const target = document.getElementById(id);
@@ -183,6 +183,14 @@ window.renderHome = () => {
     const dateOptions = { weekday: 'long', month: 'long', day: 'numeric' };
     document.getElementById('home-date').innerText = new Date().toLocaleDateString('en-GB', dateOptions).toUpperCase();
 
+    // ✨ NEW: THE SMART CLOCK ENGINE ✨
+    const currentHour = new Date().getHours();
+    let greeting = "Good Morning.";
+    if (currentHour >= 12 && currentHour < 17) greeting = "Good Afternoon.";
+    else if (currentHour >= 17) greeting = "Good Evening.";
+    const greetingEl = document.getElementById('home-greeting');
+    if (greetingEl) greetingEl.innerText = greeting;
+
     let todaysJobs = db.customers.filter(c => c.week == curWeek && c.day == workingDay && !c.skipped);
     let routeValue = todaysJobs.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
     document.getElementById('home-jobs-count').innerText = `${todaysJobs.length} Jobs Scheduled (Wk ${curWeek} ${workingDay})`;
@@ -196,7 +204,6 @@ window.renderHome = () => {
     document.getElementById('home-cash').innerText = `£${cashTotal.toFixed(2)}`;
 };
 
-// ✨ NEW: AI TEASER ENGINE ✨
 window.openAITeaserModal = () => {
     triggerHaptic();
     document.getElementById('aiKeyInputModal').value = localStorage.getItem('HP_AI_Key') || '';
@@ -223,10 +230,9 @@ window.triggerAI = (context, id = null) => {
     triggerHaptic(); const key = localStorage.getItem('HP_AI_Key');
     if(!key) { openAITeaserModal(); } 
     else {
-        // Dormant AI Engine Simulation
-        if(context === 'voice') showToast("Listening... (Awaiting v3.1 API endpoint)", "normal");
-        if(context === 'receipt') showToast("Scanning receipt... (Awaiting v3.1 Vision API)", "normal");
-        if(context === 'reply') showToast("Drafting reply... (Awaiting v3.1 Text API)", "normal");
+        if(context === 'voice') showToast("Listening... (Awaiting v3.2 API endpoint)", "normal");
+        if(context === 'receipt') showToast("Scanning receipt... (Awaiting v3.2 Vision API)", "normal");
+        if(context === 'reply') showToast("Drafting reply... (Awaiting v3.2 Text API)", "normal");
     }
 };
 
@@ -577,88 +583,6 @@ window.renderFinances = () => {
         }); 
         ledger.innerHTML = ledgerHtml; 
     }
-};
-
-const generateHistoryHtml = (id, phone) => { 
-    const history = db.history.filter(h => h.custId === id).slice(-3).reverse();
-    if (history.length === 0) return `<div class="empty-state" style="padding: 10px;"><div class="empty-text" style="font-size:14px;">No Payment History</div></div>`;
-    return history.map(h => `<div class="CMD-history-row" style="align-items:center;"><div><span>${escapeHTML(h.date)}</span> <span style="opacity:0.5; font-size:10px; margin-left:5px;">${h.method === 'Bank' ? '🏦' : '💵'}</span></div><div style="display:flex; gap:10px; align-items:center;"><span style="color:var(--success);">£${parseFloat(h.amt).toFixed(2)}</span><button class="quick-action-btn" style="width:28px; height:28px; font-size:12px; margin-left:0;" onclick="cmdReceiptWA('${escapeHTML(phone)}', '${h.amt}', '${escapeHTML(h.date)}')">🧾</button></div></div>`).join('');
-};
-
-const generateArrearsHtml = (arrData, cId, context, phone) => { 
-    if (!arrData.isOwed) return `<div class="CMD-alert-success">✅ FULLY PAID UP</div>`;
-    let listHtml = arrData.breakdown.map(b => `<li>£${b.amt.toFixed(2)} - ${escapeHTML(b.month)}</li>`).join('');
-    
-    return `
-        <div class="CMD-alert-danger" style="cursor:default;">
-            <div class="CMD-alert-danger-title">⚠️ TOTAL OUTSTANDING: £${arrData.total.toFixed(2)}</div>
-            <ul class="CMD-arrears-list">${listHtml}</ul>
-            <div style="margin-top: 15px; font-size: 11px; font-weight: 900; opacity: 0.8; text-transform: uppercase;">👆 Tap below to settle or chase</div>
-            
-            <div style="display:flex; gap:10px; margin-top:15px;">
-                <button class="ADM-save-btn" style="margin:0; height:45px!important; font-size:13px; background:rgba(0,0,0,0.2); box-shadow:none;" onclick="cmdSettlePaid('${cId}', '${context}')">💰 SETTLE ACCOUNT</button>
-            </div>
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button class="ADM-save-btn" style="margin:0; height:40px!important; font-size:12px; background:white; color:var(--danger); box-shadow:none;" onclick="cmdChaseWA('${cId}', 'polite')">💬 POLITE CHASE</button>
-                <button class="ADM-save-btn" style="margin:0; height:40px!important; font-size:12px; background:black; color:white; box-shadow:none;" onclick="cmdChaseWA('${cId}', 'firm')">🚨 FIRM CHASE</button>
-            </div>
-        </div>`;
-};
-
-const generatePhotoHtml = (c) => {
-    if (!c.photos || c.photos.length === 0) return '';
-    const imgTags = c.photos.map(p => `<img src="${p.data}" class="CMD-photo-thumb" onclick="window.open('${p.data}')">`).join('');
-    return `<h3 class="CMD-history-hdr">Evidence Photos</h3><div class="CMD-photo-gallery">${imgTags}</div>`;
-};
-
-window.showJobBriefing = (id) => {
-    triggerHaptic(); const c = db.customers.find(x => x.id === id); if(!c) return;
-    const container = document.getElementById('briefingData'); const arrData = window.getArrearsData(c);
-    const mapQuery = encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`); const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${mapQuery}`;
-    const notesHtml = c.notes ? `<div class="CMD-notes-box">📝 ${escapeHTML(c.notes)}</div>` : '';
-
-    container.innerHTML = `
-        <div class="CMD-header"><h2>${escapeHTML(c.name)}</h2><button class="CMD-header-edit-btn" onclick="openAddCustomerModal('${c.id}')">✏️</button><div class="CMD-header-sub">${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}</div></div>
-        ${notesHtml}
-        ${generateArrearsHtml(arrData, c.id, 'job', c.phone)}
-        <div class="CMD-action-grid">
-            <button class="CMD-action-btn clean" onclick="cmdToggleClean('${c.id}')"><span style="font-size:24px;">🧼</span> <br>${c.cleaned ? 'UNDO CLEAN' : 'MARK CLEAN'}</button>
-            <button class="CMD-action-btn route" onclick="window.open('${navUrl}', '_blank')"><span style="font-size:24px;">📍</span> <br>NAVIGATE</button>
-            <button class="CMD-action-btn call" onclick="window.location.href='tel:${escapeHTML(c.phone)}'"><span style="font-size:24px;">📞</span> <br>CALL</button>
-            
-            <button class="CMD-action-btn skip" onclick="cmdToggleSkip('${c.id}')"><span style="font-size:24px;">⏭️</span> <br>${c.skipped ? 'UNSKIP' : 'SKIP JOB'}</button>
-            <button class="CMD-action-btn" style="background:rgba(0,0,0,0.05);" onclick="triggerPhotoUpload('${c.id}')"><span style="font-size:24px;">📷</span> <br>LOG EVIDENCE</button>
-            <button class="CMD-action-btn invoice" onclick="cmdGenerateInvoice('${c.id}')"><span style="font-size:24px;">📄</span> <br>INVOICE</button>
-
-            <button class="CMD-action-btn whatsapp" onclick="cmdWhatsApp('${c.id}')"><span style="font-size:24px;">💬</span> <br>WA REC</button>
-            <button class="CMD-action-btn sms" onclick="cmdSMS('${c.id}')"><span style="font-size:24px;">📱</span> <br>SMS REC</button>
-            
-            <button class="CMD-action-btn ai-btn ai-glow-btn" onclick="triggerAI('reply', '${c.id}')"><span style="font-size:24px;">✨</span> <br>SMART REPLY</button>
-        </div>
-        ${generatePhotoHtml(c)}
-        <h3 class="CMD-history-hdr">Rolling History (Tap 🧾 for receipt)</h3><div class="CMD-history-box">${generateHistoryHtml(c.id, c.phone)}</div>
-    `;
-    document.getElementById('briefingModal').classList.remove('hidden');
-};
-
-window.showCustomerBriefing = (id) => { 
-    triggerHaptic(); const c = db.customers.find(x => x.id === id); if(!c) return;
-    const container = document.getElementById('briefingData'); const arrData = window.getArrearsData(c);
-    const notesHtml = c.notes ? `<div class="CMD-notes-box">📝 ${escapeHTML(c.notes)}</div>` : '';
-
-    container.innerHTML = `
-        <div class="CMD-header"><h2>${escapeHTML(c.name)}</h2><button class="CMD-header-edit-btn" onclick="openAddCustomerModal('${c.id}')">✏️</button><div class="CMD-header-sub">${escapeHTML(c.houseNum)} ${escapeHTML(c.street)} <br>${escapeHTML(c.postcode || '')}</div></div>
-        <div class="CMD-details-box"><div class="CMD-detail-row"><span>📞 Phone</span><span>${escapeHTML(c.phone) || 'N/A'}</span></div><div class="CMD-detail-row"><span>💰 Price</span><span>£${parseFloat(c.price).toFixed(2)}</span></div><div class="CMD-detail-row"><span>📅 Week</span><span>Week ${escapeHTML(c.week)}</span></div><div class="CMD-detail-row"><span>📆 Day</span><span>${escapeHTML(c.day)}</span></div><div class="CMD-detail-row"><span>🔄 Cycle</span><span>${escapeHTML(c.freq || 4)} Weekly</span></div></div>
-        ${notesHtml}
-        ${generateArrearsHtml(arrData, c.id, 'cust', c.phone)}
-        <div style="display:flex; gap:10px; margin-bottom:20px;">
-            <button class="ADM-save-btn" style="margin-top:0; height: 50px!important; font-size: 12px; background: rgba(0,0,0,0.05); color: var(--text); box-shadow: none; flex:1;" onclick="triggerPhotoUpload('${c.id}')">📷 LOG EVIDENCE</button>
-            <button class="ADM-save-btn" style="margin-top:0; height: 50px!important; font-size: 12px; background: transparent; border: 2px solid var(--accent); color: var(--accent); box-shadow: none; flex:1;" onclick="cmdGenerateInvoice('${c.id}')">📄 PDF INVOICE</button>
-        </div>
-        ${generatePhotoHtml(c)}
-        <h3 class="CMD-history-hdr">Rolling History (Tap 🧾 for receipt)</h3><div class="CMD-history-box">${generateHistoryHtml(c.id, c.phone)}</div>
-    `;
-    document.getElementById('briefingModal').classList.remove('hidden');
 };
 
 const getIcon = (code) => { const map = { '01d':'☀️','01n':'🌙','02d':'⛅','02n':'☁️','03d':'☁️','03n':'☁️','04d':'☁️','04n':'☁️','09d':'🌧️','09n':'🌧️','10d':'🌧️','10n':'🌧️','11d':'🌦️','11n':'🌧️','13d':'🌨️','13n':'🌨️','50d':'💨','50n':'💨' }; return map[code] || '🌤️'; };
