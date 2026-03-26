@@ -1,4 +1,3 @@
-/* --- 🎛️ MASTER DESIGN TOKENS --- */
 :root {
     --accent: #007aff;
     --bg: #f2f2f7;
@@ -9,7 +8,7 @@
     --ios-grey: #e9e9eb;
     --grad: linear-gradient(135deg, #007aff 0%, #0051a8 100%);
     --h-header: 75px; 
-    --h-nav: 65px; 
+    --h-nav: 70px; 
 }
 body.dark-mode { --bg: #000; --card: #1c1c1e; --text: #fff; --ios-grey: #39393d; }
 
@@ -51,6 +50,7 @@ body.dark-mode .toast { background: rgba(255,255,255,0.9); color: black; }
 .segment { flex: 1; padding: 12px; border-radius: 12px; border: none; background: transparent; font-weight: 800; color: var(--text); opacity: 0.5; font-size: 15px; display: flex; justify-content: center; align-items: center; gap: 8px; transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); }
 .segment.active { background: var(--card); opacity: 1; box-shadow: 0 3px 8px rgba(0,0,0,0.1); color: var(--text); }
 
+/* ✨ NEW: RAISED CENTER FAB BOTTOM NAV ✨ */
 #BOTTOM-NAV { position: fixed; bottom: 0; left: 0; width: 100%; height: calc(var(--h-nav) + env(safe-area-inset-bottom)); background: rgba(242, 242, 247, 0.85); -webkit-backdrop-filter: blur(25px); backdrop-filter: blur(25px); border-top: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 1000; }
 body.dark-mode #BOTTOM-NAV { background: rgba(0, 0, 0, 0.85); border-top: 1px solid rgba(255,255,255,0.05); }
 .nav-item { background: none; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text); opacity: 0.4; transition: 0.2s ease; width: 20%; height: 100%; padding-top: 5px; }
@@ -58,6 +58,12 @@ body.dark-mode #BOTTOM-NAV { background: rgba(0, 0, 0, 0.85); border-top: 1px so
 .nav-icon { font-size: 22px; margin-bottom: 2px; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
 .nav-item.active .nav-icon { transform: translateY(-2px) scale(1.1); }
 .nav-item small { font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
+
+.nav-fab-wrapper { position: relative; width: 20%; display: flex; justify-content: center; align-items: center; }
+.home-fab { position: absolute; top: -30px; width: 64px; height: 64px; border-radius: 50%; background: var(--grad); border: 5px solid var(--bg); color: white; font-size: 28px; display: flex; justify-content: center; align-items: center; box-shadow: 0 10px 20px rgba(0, 122, 255, 0.3); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1001; }
+body.dark-mode .home-fab { border-color: var(--bg); }
+.home-fab:active { transform: scale(0.9); }
+.home-fab.active { transform: translateY(-5px); box-shadow: 0 15px 25px rgba(0, 122, 255, 0.4); }
 
 .ADM-card { background: var(--card); margin: 0 20px 25px; padding: 25px; border-radius: 30px; border: 1px solid rgba(0,0,0,0.02); box-shadow: 0 10px 30px rgba(0,0,0,0.04) !important; transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .ADM-hdr { margin: 0 0 15px; opacity: 0.5; font-size: 11px; text-transform: uppercase; font-weight: 900; letter-spacing: 1px; text-align: center; }
@@ -84,12 +90,10 @@ body.dark-mode #BOTTOM-NAV { background: rgba(0, 0, 0, 0.85); border-top: 1px so
 .CST-filter-btn { background: var(--card); border: 2px solid var(--ios-grey); color: var(--text); border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; opacity: 0.7; transition: all 0.2s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.03); display: block; margin: 0 auto; }
 .CST-filter-btn.active { background: rgba(255, 69, 58, 0.15); color: var(--danger); border-color: transparent; opacity: 1; box-shadow: 0 5px 15px rgba(255, 69, 58, 0.2); transform: scale(1.02); }
 
-/* ✨ UI UPGRADE: Progress Bar Logic ✨ */
 .WEE-progress-wrap { background: var(--ios-grey); height: 20px; border-radius: 10px; margin: 0 25px 10px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); position: relative; }
 .WEE-progress-fill { background: var(--success); height: 100%; transition: width 0.5s ease; border-radius: 10px; }
 .WEE-progress-text { text-align: center; font-size: 13px; font-weight: 800; margin-bottom: 20px; color: var(--text); opacity: 0.7; }
 
-/* UI UPGRADE: Quick Action Buttons & Skipped State */
 .quick-action-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--ios-grey); font-size: 18px; display: flex; align-items: center; justify-content: center; transition: 0.2s; box-shadow: 0 3px 8px rgba(0,0,0,0.06); margin-left: 8px; }
 .quick-action-btn:active { transform: scale(0.9); }
 .CST-card-item.skipped-card { opacity: 0.45; background: var(--ios-grey); }
@@ -98,14 +102,11 @@ body.dark-mode #BOTTOM-NAV { background: rgba(0, 0, 0, 0.85); border-top: 1px so
 #WEE-list-container { position: relative; width: 100%; }
 .swipe-wrapper { position: relative; margin: 0 25px 12px; border-radius: 30px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.04); background: var(--ios-grey); transform: translate3d(0,0,0); }
 .swipe-wrapper.dragging { opacity: 0.8; transform: scale(1.02); box-shadow: 0 20px 40px rgba(0,0,0,0.15); z-index: 50; }
-
 .swipe-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: space-between; align-items: center; border-radius: 30px; font-size: 24px; font-weight: 900; padding: 0 30px; color: white; }
 .swipe-bg .action-left { color: var(--success); width: 50%; text-align: left; }
 .swipe-bg .action-right { color: var(--danger); width: 50%; text-align: right; }
-
 .swipe-fg { position: relative; background: var(--card); border-radius: 30px; display: flex; justify-content: space-between; align-items: center; padding: 20px; min-height: 110px; z-index: 2; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); touch-action: pan-y; }
 .swipe-fg.swiping { transition: none; }
-
 .drag-handle { padding: 10px; font-size: 28px; color: var(--ios-grey); opacity: 0.8; touch-action: none; cursor: grab; margin-left: 5px; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
 .drag-handle:active { opacity: 1; color: var(--accent); }
 
