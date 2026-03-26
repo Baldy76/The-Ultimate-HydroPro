@@ -13,8 +13,6 @@ let currentPayContext = null;
 let currentPayTotal = 0;
 let confirmCallback = null; 
 let showArrearsOnly = false;
-
-// ✨ NEW: State tracker for editing
 let editingCustomerId = null;
 
 const idb = {
@@ -70,11 +68,11 @@ if ('serviceWorker' in navigator) {
 const escapeHTML = (str) => {
     if (!str) return '';
     return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;"); 
+        .replace(/&/g, "&")
+        .replace(/</g, "<")
+        .replace(/>/g, ">")
+        .replace(/"/g, '"')
+        .replace(/'/g, "'"); 
 };
 
 window.getArrearsData = (c) => {
@@ -89,6 +87,42 @@ window.getArrearsData = (c) => {
     
     const totalOwed = breakdown.reduce((sum, item) => sum + item.amt, 0);
     return { isOwed: totalOwed > 0.01, total: totalOwed, monthsString: breakdown.map(b => b.month).join(', '), breakdown: breakdown };
+};
+
+// --- ✨ NEW: PULL TO REFRESH WEATHER LOGIC ✨ ---
+let wthStartY = 0;
+let wthContainer = null;
+let ptrIndicator = null;
+
+const initPTR = () => {
+    wthContainer = document.getElementById('weather-root');
+    ptrIndicator = document.getElementById('ptr-indicator');
+    
+    if(!wthContainer || !ptrIndicator) return;
+
+    wthContainer.addEventListener('touchstart', e => {
+        if (wthContainer.scrollTop === 0) wthStartY = e.touches[0].clientY;
+    }, {passive: true});
+
+    wthContainer.addEventListener('touchmove', e => {
+        if (wthContainer.scrollTop === 0 && wthStartY > 0) {
+            let currentY = e.touches[0].clientY;
+            let diff = currentY - wthStartY;
+            if (diff > 20) {
+                ptrIndicator.classList.add('visible');
+            }
+        }
+    }, {passive: true});
+
+    wthContainer.addEventListener('touchend', e => {
+        if (ptrIndicator.classList.contains('visible')) {
+            ptrIndicator.classList.remove('visible');
+            triggerHaptic();
+            showToast("Fetching Radar...", "normal");
+            initWeather();
+        }
+        wthStartY = 0;
+    });
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -117,7 +151,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const bNameEl = document.getElementById('bName'); const bAccEl = document.getElementById('bAcc');
     if(bNameEl) bNameEl.value = db.bank.name; if(bAccEl) bAccEl.value = db.bank.acc;
 
-    renderAllSafe(); initWeather();
+    renderAllSafe(); 
+    initWeather();
+    initPTR();
 
     const weekView = document.getElementById('week-view-root');
     if(weekView) {
@@ -173,7 +209,6 @@ window.renderAllSafe = () => {
     } catch (err) { console.error("Render Error:", err); }
 };
 
-// --- ✨ NEW: SMART EDIT/ADD MODAL LOGIC ✨ ---
 window.openAddCustomerModal = (id = null) => { 
     triggerHaptic(); 
     editingCustomerId = id;
@@ -183,15 +218,13 @@ window.openAddCustomerModal = (id = null) => {
     const deleteBtn = document.getElementById('deleteCustomerBtn');
 
     if (id) {
-        // Edit Mode
         const c = db.customers.find(x => x.id === id);
         if(!c) return;
         
         titleEl.innerText = "Edit Customer";
         saveBtn.innerText = "UPDATE";
-        deleteBtn.classList.remove('hidden'); // Reveal the nuke button
+        deleteBtn.classList.remove('hidden'); 
         
-        // Populate existing data
         document.getElementById('cName').value = c.name || '';
         document.getElementById('cHouseNum').value = c.houseNum || '';
         document.getElementById('cStreet').value = c.street || '';
@@ -202,13 +235,11 @@ window.openAddCustomerModal = (id = null) => {
         document.getElementById('cWeek').value = c.week || '1';
         document.getElementById('cDay').value = c.day || 'Mon';
         
-        // Close briefing if it's open behind this
         document.getElementById('briefingModal').classList.add('hidden');
     } else {
-        // Add Mode
         titleEl.innerText = "Add Customer";
         saveBtn.innerText = "SAVE";
-        deleteBtn.classList.add('hidden'); // Hide the nuke button
+        deleteBtn.classList.add('hidden'); 
         
         document.getElementById('cName').value = '';
         document.getElementById('cHouseNum').value = '';
@@ -250,16 +281,16 @@ window.saveCustomer = () => {
     };
 
     if (editingCustomerId) {
-        // ✨ UPDATE EXISTING CUSTOMER ✨
         const cIndex = db.customers.findIndex(x => x.id === editingCustomerId);
         if (cIndex > -1) {
             db.customers[cIndex] = { ...db.customers[cIndex], ...newDetails };
             showToast(`${name} updated`, "success");
         }
     } else {
-        // ✨ ADD NEW CUSTOMER ✨
+        // ✨ Phase 5 Add: Give new customers an 'order' property for routing
         db.customers.push({ 
             id: Date.now().toString(), 
+            order: Date.now(), 
             ...newDetails,
             cleaned: false, 
             paidThisMonth: 0, 
@@ -273,7 +304,6 @@ window.saveCustomer = () => {
     renderAllSafe(); 
 };
 
-// --- ✨ NEW: DELETE CUSTOMER LOGIC ✨ ---
 window.cmdDeleteCustomer = () => {
     if (!editingCustomerId) return;
     const c = db.customers.find(x => x.id === editingCustomerId);
@@ -287,7 +317,6 @@ window.cmdDeleteCustomer = () => {
         renderAllSafe();
     });
 };
-
 
 window.saveBank = () => { 
     triggerHaptic();
@@ -395,9 +424,107 @@ const handleSwipe = () => {
     }
 };
 
+// --- ✨ PHASE 5: GESTURE FACTORY ✨ ---
+const attachSwipeGestures = (wrap, fg, cId) => {
+    let startX = 0;
+    let currentX = 0;
+    let isSwiping = false;
+
+    fg.addEventListener('touchstart', e => {
+        if(e.target.closest('.drag-handle')) return; // Ignore if touching the grip
+        startX = e.touches[0].clientX;
+        fg.classList.add('swiping');
+    }, {passive: true});
+
+    fg.addEventListener('touchmove', e => {
+        if(e.target.closest('.drag-handle')) return;
+        currentX = e.touches[0].clientX;
+        let diff = currentX - startX;
+        
+        if (Math.abs(diff) > 10) isSwiping = true;
+
+        // Dampen swipe length
+        if (diff > 75) diff = 75 + (diff - 75) * 0.2;
+        if (diff < -75) diff = -75 + (diff + 75) * 0.2;
+
+        fg.style.transform = `translate3d(${diff}px, 0, 0)`;
+    }, {passive: true});
+
+    fg.addEventListener('touchend', e => {
+        if(e.target.closest('.drag-handle')) return;
+        let diff = currentX - startX;
+        fg.classList.remove('swiping');
+        fg.style.transform = `translate3d(0, 0, 0)`;
+        
+        if (isSwiping) {
+            if (diff > 55) { cmdToggleClean(cId); } 
+            else if (diff < -55) { cmdSettlePaid(cId, 'job'); }
+        }
+        
+        // Prevent click if we actually swiped
+        setTimeout(() => { isSwiping = false; }, 100);
+        startX = 0; currentX = 0;
+    });
+
+    fg.addEventListener('click', e => {
+        if(!isSwiping && !e.target.closest('.drag-handle')) {
+            showJobBriefing(cId);
+        }
+    });
+};
+
+const attachDragDrop = (wrap, listContainer) => {
+    const handle = wrap.querySelector('.drag-handle');
+    let isDragging = false;
+
+    handle.addEventListener('touchstart', e => {
+        isDragging = true;
+        triggerHaptic();
+        wrap.classList.add('dragging');
+    }, {passive: true});
+
+    handle.addEventListener('touchmove', e => {
+        if (!isDragging) return;
+        e.preventDefault(); // Stop screen from scrolling!
+
+        const touchY = e.touches[0].clientY;
+        const siblings = [...listContainer.querySelectorAll('.swipe-wrapper:not(.dragging)')];
+        
+        let nextSibling = siblings.find(sib => {
+            const rect = sib.getBoundingClientRect();
+            return touchY <= rect.top + rect.height / 2;
+        });
+
+        if (nextSibling) {
+            listContainer.insertBefore(wrap, nextSibling);
+        } else {
+            listContainer.appendChild(wrap);
+        }
+    }, {passive: false});
+
+    handle.addEventListener('touchend', e => {
+        if (!isDragging) return;
+        isDragging = false;
+        wrap.classList.remove('dragging');
+        triggerHaptic();
+
+        // Save the new Route Order!
+        const newOrderEls = [...listContainer.querySelectorAll('.swipe-wrapper')];
+        newOrderEls.forEach((el, index) => {
+            const customer = db.customers.find(c => c.id === el.dataset.id);
+            if(customer) customer.order = index; // Re-index based on DOM position
+        });
+        saveData();
+    });
+};
+
 window.renderWeek = () => { 
     const list = document.getElementById('WEE-list-container'); if(!list) return; list.innerHTML = '';
-    let customersToday = db.customers.filter(c => c.week == curWeek && c.day == workingDay);
+    
+    // Sort based on their custom route order!
+    let customersToday = db.customers
+        .filter(c => c.week == curWeek && c.day == workingDay)
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
     
     if(customersToday.length === 0) {
         list.innerHTML = `<div class="empty-state">
@@ -413,22 +540,53 @@ window.renderWeek = () => {
         const arrData = window.getArrearsData(c);
         const cleanBadge = c.cleaned ? `<span class="CST-badge badge-clean">✅ CLEANED</span>` : '';
         const arrearsBadge = arrData.isOwed ? `<span class="CST-badge badge-unpaid">❌ OWES £${arrData.total.toFixed(2)}</span>` : `<span class="CST-badge badge-paid">✅ PAID</span>`;
-        const div = document.createElement('div'); div.className = 'CST-card-item'; div.onclick = () => showJobBriefing(c.id);
-        div.innerHTML = `<div class="CST-card-top"><div><strong style="font-size:20px;">${escapeHTML(c.name)}</strong><br><small style="color:var(--accent); font-weight:800;">${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}</small></div><div style="font-weight:950; font-size:22px;">£${(parseFloat(c.price)||0).toFixed(2)}</div></div><div class="CST-card-badges">${cleanBadge} ${arrearsBadge}</div>`;
-        list.appendChild(div);
+        
+        // Build the physical DOM elements so we can attach listeners safely
+        const wrap = document.createElement('div');
+        wrap.className = 'swipe-wrapper';
+        wrap.dataset.id = c.id;
+
+        const bg = document.createElement('div');
+        bg.className = 'swipe-bg';
+        bg.innerHTML = `<div class="action-left">✅</div><div class="action-right">💰</div>`;
+
+        const fg = document.createElement('div');
+        fg.className = 'swipe-fg';
+        fg.innerHTML = `
+            <div style="flex:1;">
+                <strong style="font-size:20px; display:block;">${escapeHTML(c.name)}</strong>
+                <small style="color:var(--accent); font-weight:800; display:block;">${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}</small>
+                <div class="CST-card-badges">${cleanBadge} ${arrearsBadge}</div>
+            </div>
+            <div style="font-weight:950; font-size:22px; display:flex; align-items:center;">
+                £${(parseFloat(c.price)||0).toFixed(2)}
+                <div class="drag-handle">≡</div>
+            </div>`;
+        
+        wrap.appendChild(bg);
+        wrap.appendChild(fg);
+        list.appendChild(wrap);
+
+        // Attach physics to the cards!
+        attachSwipeGestures(wrap, fg, c.id);
+        attachDragDrop(wrap, list);
     });
 };
 
 window.routeMyDay = () => {
     triggerHaptic();
-    let todaysJobs = db.customers.filter(c => c.week == curWeek && c.day == workingDay);
+    // Google Maps will now respect your custom drag & drop order!
+    let todaysJobs = db.customers
+        .filter(c => c.week == curWeek && c.day == workingDay)
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+        
     if(todaysJobs.length === 0) return showToast("No jobs to route today!", "error");
     if(todaysJobs.length > 10) showToast("Routing limited to first 10 stops.", "normal");
     
     let stops = todaysJobs.slice(0, 10).map(c => encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`));
     let destination = stops.pop(); let waypoints = stops.join('|'); 
     
-    let url = `http://googleusercontent.com/maps.google.com/dir/?api=1&destination=${destination}`;
+    let url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
     if(waypoints) url += `&waypoints=${waypoints}`;
     window.open(url, '_blank');
 };
@@ -477,7 +635,7 @@ window.showJobBriefing = (id) => {
     const container = document.getElementById('briefingData');
     const arrData = window.getArrearsData(c);
     const mapQuery = encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`);
-    const navUrl = `http://googleusercontent.com/maps.google.com/dir/?api=1&destination=${mapQuery}`;
+    const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${mapQuery}`;
     
     const notesHtml = c.notes ? `<div class="CMD-notes-box">📝 ${escapeHTML(c.notes)}</div>` : '';
 
@@ -535,7 +693,10 @@ window.cmdToggleClean = (id) => {
     triggerHaptic();
     const c = db.customers.find(x => x.id === id); 
     c.cleaned = !c.cleaned; 
-    window.saveData(); window.renderAllSafe(); window.showJobBriefing(id); 
+    window.saveData(); window.renderAllSafe(); 
+    
+    // Close briefing if it's open
+    document.getElementById('briefingModal').classList.add('hidden');
     showToast(c.cleaned ? "Marked as Cleaned ✅" : "Clean Undone", "success");
 };
 
