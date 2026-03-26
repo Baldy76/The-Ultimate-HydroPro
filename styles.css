@@ -1,4 +1,3 @@
-/* --- 🎛️ MASTER DESIGN TOKENS --- */
 :root {
     --accent: #007aff;
     --bg: #f2f2f7;
@@ -21,14 +20,18 @@ button:active { transform: scale(0.96) !important; opacity: 0.8; }
 
 body { background: var(--bg); color: var(--text); margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
 
-.tab-content { display: none !important; width: 100%; }
-
-@keyframes fadeSlideUp {
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
+/* ✨ UI UPGRADE: Fluid Tab Transitions ✨ */
+.tab-content { display: none !important; width: 100%; opacity: 0; }
+.tab-content.active { 
+    display: flex !important; flex-direction: column; 
+    padding-top: calc(var(--h-header) + env(safe-area-inset-top) + 20px); 
+    padding-bottom: calc(var(--h-nav) + env(safe-area-inset-bottom) + 30px); 
+    animation: tabEnter 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; 
 }
-
-.tab-content.active { display: flex !important; flex-direction: column; padding-top: calc(var(--h-header) + env(safe-area-inset-top) + 20px); padding-bottom: calc(var(--h-nav) + env(safe-area-inset-bottom) + 30px); animation: fadeSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes tabEnter {
+    from { opacity: 0; transform: scale(0.98) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
 
 #G-HEADER { position: fixed; top: 0; left: 0; width: 100%; height: calc(var(--h-header) + env(safe-area-inset-top)) !important; padding-top: env(safe-area-inset-top); z-index: 1000; background: rgba(242, 242, 247, 0.85); -webkit-backdrop-filter: blur(25px); backdrop-filter: blur(25px); border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: row; justify-content: flex-start; align-items: flex-end; padding-bottom: 10px; padding-left: 25px; transition: background 0.3s ease; }
 body.dark-mode #G-HEADER { background: rgba(0, 0, 0, 0.85); border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -78,7 +81,6 @@ body.dark-mode #BOTTOM-NAV { background: rgba(0, 0, 0, 0.85); border-top: 1px so
 
 .CST-search-vault { padding: 0 25px 15px; width: 100%; max-width: 400px; margin: 0 auto; }
 #mainSearch { width: 100%; height: 60px !important; border-radius: 20px; border: 3px solid var(--accent); background: var(--card); padding: 0 20px; font-size: 20px; font-weight: 700; color: var(--text); outline: none; font-family: 'Plus Jakarta Sans', sans-serif; }
-
 .CST-filter-btn { background: var(--card); border: 2px solid var(--ios-grey); color: var(--text); border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; opacity: 0.7; transition: all 0.2s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.03); display: block; margin: 0 auto; }
 .CST-filter-btn.active { background: rgba(255, 69, 58, 0.15); color: var(--danger); border-color: transparent; opacity: 1; box-shadow: 0 5px 15px rgba(255, 69, 58, 0.2); transform: scale(1.02); }
 
@@ -148,9 +150,17 @@ body.dark-mode #BOTTOM-NAV { background: rgba(0, 0, 0, 0.85); border-top: 1px so
 .modal-overlay.hidden .modal-content.bottom-sheet { transform: translateY(100%); }
 .modal-drag-pill { width: 40px; height: 5px; background: var(--text); opacity: 0.2; border-radius: 5px; margin: 0 auto 20px; }
 
-.CMD-header { border-bottom: 3px solid var(--accent); padding-bottom: 15px; margin-bottom: 15px; }
-.CMD-header h2 { margin: 0; font-size: 32px; font-weight: 950; }
+/* Hidden utility class */
+.hidden { display: none !important; }
+
+.CMD-header { border-bottom: 3px solid var(--accent); padding-bottom: 15px; margin-bottom: 15px; position: relative; }
+.CMD-header h2 { margin: 0; font-size: 32px; font-weight: 950; padding-right: 40px; }
 .CMD-header-sub { font-size: 18px; opacity: 0.6; font-weight: 800; margin-top: 5px; }
+
+/* ✨ UI UPGRADE: Header Edit Button ✨ */
+.CMD-header-edit-btn { position: absolute; top: 0; right: 0; background: none; border: none; font-size: 26px; opacity: 0.5; transition: opacity 0.2s; padding: 5px; }
+.CMD-header-edit-btn:active { opacity: 1; }
+
 .CMD-alert-success { color: var(--success); text-align: center; font-weight: 950; margin: 15px 0; font-size: 18px; }
 .CMD-alert-danger { background: var(--danger); color: white; padding: 15px; border-radius: 20px; text-align: center; margin: 15px 0; cursor: pointer; transition: transform 0.1s ease; }
 .CMD-alert-danger:active { transform: scale(0.96); }
