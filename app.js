@@ -67,7 +67,7 @@ if ('serviceWorker' in navigator) {
 
 const escapeHTML = (str) => {
     if (!str) return '';
-    return String(str).replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, '"').replace(/'/g, "'"); 
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); 
 };
 
 window.getArrearsData = (c) => {
@@ -107,7 +107,7 @@ const initPTR = () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("Ultimate Hydro Pro v2.2 Booting...");
+    console.log("Ultimate Hydro Pro v2.3 Booting...");
     
     try {
         await idb.init(); 
@@ -246,6 +246,7 @@ window.openAddCustomerModal = (id = null) => {
         document.getElementById('cPhone').value = c.phone || '';
         document.getElementById('cPrice').value = c.price || '';
         document.getElementById('cNotes').value = c.notes || '';
+        document.getElementById('cFreq').value = c.freq || '4'; // ✨ NEW: Load frequency
         document.getElementById('cWeek').value = c.week || '1';
         document.getElementById('cDay').value = c.day || 'Mon';
         document.getElementById('briefingModal').classList.add('hidden');
@@ -258,6 +259,7 @@ window.openAddCustomerModal = (id = null) => {
         document.getElementById('cPhone').value = '';
         document.getElementById('cPrice').value = '';
         document.getElementById('cNotes').value = '';
+        document.getElementById('cFreq').value = '4'; // ✨ NEW: Default frequency
         document.getElementById('cWeek').value = '1';
         document.getElementById('cDay').value = 'Mon';
     }
@@ -275,7 +277,9 @@ window.saveCustomer = () => {
         name, houseNum: document.getElementById('cHouseNum').value.trim(), 
         street: document.getElementById('cStreet').value.trim(), postcode: document.getElementById('cPostcode').value.trim(), 
         phone: document.getElementById('cPhone').value.trim(), price: parseFloat(document.getElementById('cPrice').value) || 0, 
-        notes: document.getElementById('cNotes').value.trim(), week: document.getElementById('cWeek').value, 
+        notes: document.getElementById('cNotes').value.trim(), 
+        freq: parseInt(document.getElementById('cFreq').value) || 4, // ✨ NEW: Save frequency
+        week: document.getElementById('cWeek').value, 
         day: document.getElementById('cDay').value 
     };
 
@@ -283,7 +287,8 @@ window.saveCustomer = () => {
         const cIndex = db.customers.findIndex(x => x.id === editingCustomerId);
         if (cIndex > -1) { db.customers[cIndex] = { ...db.customers[cIndex], ...newDetails }; showToast(`${name} updated`, "success"); }
     } else {
-        db.customers.push({ id: Date.now().toString(), order: Date.now(), ...newDetails, cleaned: false, skipped: false, paidThisMonth: 0, pastArrears: [] });
+        // ✨ NEW: Initialize cycleOffset at 0 so they show up this month
+        db.customers.push({ id: Date.now().toString(), order: Date.now(), cycleOffset: 0, ...newDetails, cleaned: false, skipped: false, paidThisMonth: 0, pastArrears: [] });
         showToast(`${name} added to database`, "success"); 
     }
     saveData(); closeAddCustomerModal(); renderAllSafe(); 
@@ -312,6 +317,7 @@ window.closeConfirmModal = () => { document.getElementById('confirmModal').class
 
 document.getElementById('confirmActionBtn').addEventListener('click', () => { if(confirmCallback) confirmCallback(); closeConfirmModal(); });
 
+// ✨ NEW: THE FREQUENCY ENGINE MATHEMATICS ✨
 window.cmdCycleMonth = () => {
     showConfirm("Start New Month?", "This will reset all cleans to false and roll unpaid balances into arrears.", () => {
         const cycleMonth = new Date().toLocaleString('en-GB', { month: 'short', year: '2-digit' });
@@ -322,7 +328,24 @@ window.cmdCycleMonth = () => {
                 if (!c.pastArrears) c.pastArrears = []; 
                 c.pastArrears.push({ month: cycleMonth, amt: price - paid }); 
             } 
-            c.cleaned = false; c.skipped = false; c.paidThisMonth = 0; 
+            
+            // Frequency Engine Math
+            let freq = c.freq || 4; // Default to 4-weekly if missing
+            if (c.cycleOffset === undefined) c.cycleOffset = 0;
+            
+            if (c.cycleOffset > 0) {
+                // Not their turn yet, decrement offset and keep them skipped
+                c.cycleOffset--;
+                c.skipped = true; 
+            } else {
+                // It is their turn! Reset the offset based on frequency. 
+                // e.g. 8-weekly (8/4 - 1 = 1 skipped month). 12-weekly (12/4 - 1 = 2 skipped months).
+                c.cycleOffset = (freq / 4) - 1;
+                c.skipped = false; 
+            }
+            
+            c.cleaned = false; 
+            c.paidThisMonth = 0; 
         }); 
         db.expenses = []; saveData(); location.reload();
     });
@@ -350,11 +373,17 @@ window.renderMaster = () => {
     const search = (document.getElementById('mainSearch')?.value || "").toLowerCase();
     let renderedCount = 0;
     
+    // ✨ NEW: Global "Caller ID" search formatting
+    const searchStr = search.replace(/\s+/g, '');
+    
     db.customers.forEach(c => {
         const arrData = window.getArrearsData(c);
         if (showArrearsOnly && !arrData.isOwed) return;
 
-        if(c.name.toLowerCase().includes(search) || (c.street||"").toLowerCase().includes(search)) {
+        const phoneStr = (c.phone || "").replace(/\s+/g, '');
+        const postStr = (c.postcode || "").toLowerCase().replace(/\s+/g, '');
+
+        if(c.name.toLowerCase().includes(search) || (c.street||"").toLowerCase().includes(search) || phoneStr.includes(searchStr) || postStr.includes(searchStr)) {
             renderedCount++;
             const arrearsBadge = arrData.isOwed ? `<span class="CST-badge badge-unpaid">OWES £${arrData.total.toFixed(2)}</span>` : `<span class="CST-badge badge-paid">PAID</span>`;
             const div = document.createElement('div'); div.className = 'CST-card-item'; div.onclick = () => showCustomerBriefing(c.id);
@@ -485,6 +514,43 @@ window.cmdReceiptSMS = (phone, amt, date) => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     const separator = isIOS ? '&' : '?';
     window.open(`sms:${p}${separator}body=${encodeURIComponent(msg)}`, '_blank');
+};
+
+// ✨ NEW: GENERATE PROFESSIONAL PDF INVOICE ✨
+window.cmdGenerateInvoice = (id) => {
+    triggerHaptic();
+    const c = db.customers.find(x => x.id === id); if(!c) return;
+    const arrData = window.getArrearsData(c);
+    
+    const printArea = document.getElementById('print-area');
+    
+    printArea.innerHTML = `
+        <div style="max-width: 800px; margin: 0 auto; font-family: sans-serif; color: black; padding: 20px;">
+            <h1 style="color: #007aff; margin-bottom: 5px;">INVOICE</h1>
+            <p style="margin-top: 0; color: #666; font-size: 14px;"><strong>From:</strong> Hydro Pro Window Cleaning<br><strong>Date:</strong> ${new Date().toLocaleDateString('en-GB')}</p>
+            <hr style="border: 1px solid #eee; margin: 20px 0;">
+            <p style="font-size: 16px;"><strong>To:</strong><br>${escapeHTML(c.name)}<br>${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}<br>${escapeHTML(c.postcode)}</p>
+            <table style="width: 100%; text-align: left; border-collapse: collapse; margin-top: 30px;">
+                <tr style="border-bottom: 2px solid #000;">
+                    <th style="padding: 10px 0;">Description</th>
+                    <th style="padding: 10px 0; text-align: right;">Amount</th>
+                </tr>
+                <tr>
+                    <td style="padding: 15px 0; border-bottom: 1px solid #eee;">Window Cleaning Service</td>
+                    <td style="padding: 15px 0; border-bottom: 1px solid #eee; text-align: right;">£${parseFloat(c.price).toFixed(2)}</td>
+                </tr>
+            </table>
+            ${arrData.isOwed 
+                ? `<p style="text-align: right; font-size: 22px; margin-top: 30px; color: #ff453a;"><strong>Total Outstanding: £${arrData.total.toFixed(2)}</strong></p>` 
+                : `<p style="text-align: right; font-size: 22px; margin-top: 30px; color: #34C759;"><strong>PAID IN FULL</strong></p>`
+            }
+            <hr style="border: 1px solid #eee; margin-top: 50px;">
+            <p style="font-size: 14px; color: #666; text-align: center;"><strong>Payment Details:</strong><br>${db.bank.name} | Acc: ${db.bank.acc}</p>
+        </div>
+    `;
+
+    // Trigger browser print (Allows Save to PDF on iOS/Android)
+    window.print();
 };
 
 window.renderWeek = () => { 
@@ -665,6 +731,7 @@ window.showJobBriefing = (id) => {
         </div>
         ${notesHtml}
         ${generateArrearsHtml(arrData, c.id, 'job')}
+        
         <div class="CMD-action-grid">
             <button class="CMD-action-btn clean" onclick="cmdToggleClean('${c.id}')"><span style="font-size:24px;">🧼</span> <br>${c.cleaned ? 'UNDO CLEAN' : 'MARK CLEAN'}</button>
             <button class="CMD-action-btn pay" onclick="cmdSettlePaid('${c.id}', 'job')"><span style="font-size:24px;">💰</span> <br>COLLECT £</button>
@@ -672,6 +739,8 @@ window.showJobBriefing = (id) => {
             <button class="CMD-action-btn call" onclick="window.location.href='tel:${escapeHTML(c.phone)}'"><span style="font-size:24px;">📞</span> <br>CALL</button>
             <button class="CMD-action-btn skip" onclick="cmdToggleSkip('${c.id}')"><span style="font-size:24px;">⏭️</span> <br>${c.skipped ? 'UNSKIP' : 'SKIP JOB'}</button>
             <button class="CMD-action-btn whatsapp" onclick="cmdWhatsApp('${c.id}')"><span style="font-size:24px;">💬</span> <br>WA REC</button>
+            <button class="CMD-action-btn sms" onclick="cmdSMS('${c.id}')"><span style="font-size:24px;">📱</span> <br>SMS REC</button>
+            <button class="CMD-action-btn invoice" onclick="cmdGenerateInvoice('${c.id}')"><span style="font-size:24px;">📄</span> <br>INVOICE</button>
         </div>
         <h3 class="CMD-history-hdr">Rolling History (Tap 🧾 for receipt)</h3><div class="CMD-history-box">${generateHistoryHtml(c.id, c.phone)}</div>
     `;
@@ -697,9 +766,11 @@ window.showCustomerBriefing = (id) => {
             <div class="CMD-detail-row"><span>💰 Price</span><span>£${parseFloat(c.price).toFixed(2)}</span></div>
             <div class="CMD-detail-row"><span>📅 Week</span><span>Week ${escapeHTML(c.week)}</span></div>
             <div class="CMD-detail-row"><span>📆 Day</span><span>${escapeHTML(c.day)}</span></div>
+            <div class="CMD-detail-row"><span>🔄 Cycle</span><span>${escapeHTML(c.freq || 4)} Weekly</span></div>
         </div>
         ${notesHtml}
         ${generateArrearsHtml(arrData, c.id, 'cust')}
+        <button class="ADM-save-btn" style="height: 50px!important; font-size: 14px; background: transparent; border: 2px solid var(--accent); color: var(--accent); box-shadow: none; margin-bottom: 20px;" onclick="cmdGenerateInvoice('${c.id}')">📄 GENERATE PDF INVOICE</button>
         <h3 class="CMD-history-hdr">Rolling History (Tap 🧾 for receipt)</h3><div class="CMD-history-box">${generateHistoryHtml(c.id, c.phone)}</div>
     `;
     document.getElementById('briefingModal').classList.remove('hidden');
