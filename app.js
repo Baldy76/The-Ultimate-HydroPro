@@ -65,7 +65,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// ✨ FIXED: 100% Syntax-safe HTML Escaping ✨
+// ✨ FIXED: 100% Syntax-safe HTML Escaping (Will not freeze) ✨
 const escapeHTML = (str) => {
     if (!str) return '';
     return String(str)
@@ -107,7 +107,7 @@ const initPTR = () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("Ultimate Hydro Pro v4.2 Booting...");
+    console.log("Ultimate Hydro Pro v4.3 Booting...");
     try {
         await idb.init(); 
         let savedData = await idb.get('master_db');
@@ -145,12 +145,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// ✨ THE MISSING DEEP SCAN ENGINE ✨
+// ✨ THE FULLY INTEGRATED DEEP SCAN ENGINE ✨
 window.runDeepScanRecovery = async () => {
     triggerHaptic();
     showToast("Scanning device memory...", "normal");
     
-    // Add a tiny delay so the toast has time to appear before the heavy scanning freezes the screen
     setTimeout(async () => {
         let foundDb = null;
         
@@ -162,7 +161,7 @@ window.runDeepScanRecovery = async () => {
                     if (parsed && parsed.customers && parsed.customers.length > (foundDb ? foundDb.customers.length : 0)) {
                         foundDb = parsed;
                     }
-                } catch(e) { } // Ignore non-JSON keys
+                } catch(e) { } 
             }
         }
         
@@ -214,7 +213,7 @@ window.renderHome = () => {
     const dateOptions = { weekday: 'long', month: 'long', day: 'numeric' };
     document.getElementById('home-date').innerText = new Date().toLocaleDateString('en-GB', dateOptions).toUpperCase();
 
-    // ✨ FIXED: Smart Clock Greeting
+    // ✨ FIXED: Smart Clock Engine
     const currentHour = new Date().getHours();
     let greeting = "Good Morning.";
     if (currentHour >= 12 && currentHour < 17) greeting = "Good Afternoon.";
@@ -222,6 +221,7 @@ window.renderHome = () => {
     const greetingEl = document.getElementById('home-greeting');
     if (greetingEl) greetingEl.innerText = greeting;
 
+    // ✨ FIXED: Strict Data Type Comparison ensures Route finds the scheduled jobs
     let todaysJobs = db.customers.filter(c => String(c.week).trim() === String(curWeek).trim() && String(c.day).trim() === String(workingDay).trim() && !c.skipped);
     let routeValue = todaysJobs.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
     document.getElementById('home-jobs-count').innerText = `${todaysJobs.length} Jobs Scheduled (Wk ${curWeek} ${workingDay})`;
@@ -235,7 +235,6 @@ window.renderHome = () => {
     document.getElementById('home-cash').innerText = `£${cashTotal.toFixed(2)}`;
 };
 
-// ✨ AI INTEGRATIONS ✨
 window.openAITeaserModal = () => {
     triggerHaptic();
     const input = document.getElementById('aiKeyInputModal');
@@ -310,7 +309,6 @@ window.saveCustomer = () => {
         showToast(`${name} added to database`, "success"); 
     }
 
-    // Auto-Jump to the customer's route day
     curWeek = parseInt(newDetails.week); workingDay = newDetails.day;
     localStorage.setItem('HP_curWeek', curWeek); localStorage.setItem('HP_workingDay', workingDay);
     document.querySelectorAll('.segment').forEach(b => { if(b.id && b.id.startsWith('wk-btn-')) b.classList.remove('active'); }); 
@@ -377,7 +375,7 @@ window.renderMaster = () => {
             list.appendChild(div);
         }
     });
-    if (renderedCount === 0) { list.innerHTML = `<div class="empty-state"><span class="empty-icon">👻</span><div class="empty-text">No Customers Found</div></div>`; }
+    if (renderedCount === 0) { list.innerHTML = `<div class="empty-state"><span class="empty-icon">👻</span><div class="empty-text">No Customers Found</div><button class="ADM-save-btn" style="width: 220px; font-size: 14px; height: 50px!important; margin-top: 20px; box-shadow: 0 5px 15px rgba(0,122,255,0.2);" onclick="openAddCustomerModal()">➕ ADD CUSTOMER</button></div>`; }
 };
 
 window.setWorkingWeek = (num) => { triggerHaptic(); curWeek = num; localStorage.setItem('HP_curWeek', curWeek); document.querySelectorAll('.segment').forEach(b => { if(b.id && b.id.startsWith('wk-btn-')) b.classList.remove('active'); }); const wkBtn = document.getElementById(`wk-btn-${num}`); if(wkBtn) wkBtn.classList.add('active'); renderWeek(); };
@@ -423,13 +421,13 @@ const attachDragDrop = (wrap, listContainer) => {
     });
 };
 
-// ✨ FIXED: Strict string matching to render Route reliably ✨
+// ✨ FIXED: Strict string matching to ensure missing jobs are displayed perfectly ✨
 window.renderWeek = () => { 
     const list = document.getElementById('WEE-list-container'); if(!list) return; list.innerHTML = '';
     
     let customersToday = db.customers.filter(c => String(c.week).trim() === String(curWeek).trim() && String(c.day).trim() === String(workingDay).trim()).sort((a, b) => { if (a.skipped === b.skipped) return (a.order || 0) - (b.order || 0); return a.skipped ? 1 : -1; });
     const progressDash = document.getElementById('WEE-progress-dashboard');
-    if(customersToday.length === 0) { progressDash.innerHTML = ''; list.innerHTML = `<div class="empty-state"><span class="empty-icon">🏖️</span><div class="empty-text">Zero Jobs Today</div></div>`; return; }
+    if(customersToday.length === 0) { progressDash.innerHTML = ''; list.innerHTML = `<div class="empty-state"><span class="empty-icon">🏖️</span><div class="empty-text">Zero Jobs Today</div><div class="empty-sub">Enjoy the day off, or add a job!</div><button class="ADM-save-btn" style="width: 220px; font-size: 14px; height: 50px!important; margin-top: 20px; box-shadow: 0 5px 15px rgba(0,122,255,0.2);" onclick="openAddCustomerModal()">➕ ADD CUSTOMER</button></div>`; return; }
 
     let completedCount = customersToday.filter(c => c.cleaned || c.skipped).length; let totalCount = customersToday.length; let pct = totalCount === 0 ? 0 : (completedCount / totalCount) * 100; let dailyValue = customersToday.filter(c => c.cleaned).reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
     progressDash.innerHTML = `<div class="WEE-progress-wrap"><div class="WEE-progress-fill" style="width: ${pct}%;"></div></div><div class="WEE-progress-text">${completedCount} of ${totalCount} Done • £${dailyValue.toFixed(2)} Cleaned Today</div>`;
@@ -656,7 +654,6 @@ window.renderWeek = () => {
     const list = document.getElementById('WEE-list-container'); if(!list) return; list.innerHTML = '';
     
     let customersToday = db.customers.filter(c => String(c.week).trim() === String(curWeek).trim() && String(c.day).trim() === String(workingDay).trim()).sort((a, b) => { if (a.skipped === b.skipped) return (a.order || 0) - (b.order || 0); return a.skipped ? 1 : -1; });
-    
     const progressDash = document.getElementById('WEE-progress-dashboard');
     if(customersToday.length === 0) { progressDash.innerHTML = ''; list.innerHTML = `<div class="empty-state"><span class="empty-icon">🏖️</span><div class="empty-text">Zero Jobs Today</div><div class="empty-sub">Enjoy the day off, or add a job!</div><button class="ADM-save-btn" style="width: 220px; font-size: 14px; height: 50px!important; margin-top: 20px; box-shadow: 0 5px 15px rgba(0,122,255,0.2);" onclick="openAddCustomerModal()">➕ ADD CUSTOMER</button></div>`; return; }
 
