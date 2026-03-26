@@ -11,8 +11,10 @@ let financeChartInstance = null;
 let currentPayId = null;
 let currentPayContext = null;
 let currentPayTotal = 0;
-
 let confirmCallback = null; 
+
+// ✨ NEW: Arrears filter state
+let showArrearsOnly = false;
 
 const triggerHaptic = () => {
     if (navigator.vibrate) navigator.vibrate(40);
@@ -39,7 +41,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// THE ACTUAL, VALID JS STRING REPLACEMENT FOR ESCAPING HTML
+// Bulletproof HTML escaping
 const escapeHTML = (str) => {
     if (!str) return '';
     return String(str)
@@ -64,6 +66,31 @@ window.getArrearsData = (c) => {
     return { isOwed: totalOwed > 0.01, total: totalOwed, monthsString: breakdown.map(b => b.month).join(', '), breakdown: breakdown };
 };
 
+// ✨ NEW: SWIPE GESTURE LOGIC FOR THE WEEKS TAB ✨
+const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+let touchStartX = 0;
+let touchEndX = 0;
+
+const handleSwipe = () => {
+    const swipeDistance = touchStartX - touchEndX;
+    const minSwipe = 60; // Needs to be a deliberate swipe
+    
+    if (Math.abs(swipeDistance) > minSwipe) {
+        let currentIndex = daysOfWeek.indexOf(workingDay);
+        if (swipeDistance > 0) {
+            // Swiped left (Go to Next Day)
+            if (currentIndex < daysOfWeek.length - 1) currentIndex++;
+        } else {
+            // Swiped right (Go to Prev Day)
+            if (currentIndex > 0) currentIndex--;
+        }
+        
+        // Find the button and physically click it to update UI
+        const btns = document.querySelectorAll('.WEE-day-btn');
+        if(btns[currentIndex]) btns[currentIndex].click(); 
+    }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     try {
         const saved = localStorage.getItem(DB_KEY);
@@ -81,14 +108,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if(bNameEl) bNameEl.value = db.bank.name; if(bAccEl) bAccEl.value = db.bank.acc;
 
     renderAllSafe(); initWeather();
+
+    // Attach Swipe Listeners
+    const weekView = document.getElementById('week-view-root');
+    if(weekView) {
+        weekView.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
+        weekView.addEventListener('touchend', e => { touchEndX = e.changedTouches[0].screenX; handleSwipe(); }, {passive: true});
+    }
 });
 
 function applyTheme(isDark) {
     document.body.classList.toggle('dark-mode', isDark);
-    
     const meta = document.getElementById('theme-meta');
     if(meta) meta.content = isDark ? "#000" : "#f2f2f7";
-
     const btnLight = document.getElementById('btnLight');
     const btnDark = document.getElementById('btnDark');
     if (btnLight && btnDark) {
@@ -227,21 +259,47 @@ window.exportToQuickBooks = () => { triggerHaptic(); let csv = "Date,Description
 window.exportData = () => { triggerHaptic(); const blob = new Blob([JSON.stringify(db)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "HydroPro_Backup.json"; link.click(); };
 window.importData = (event) => { const reader = new FileReader(); reader.onload = (e) => { try { const imported = JSON.parse(e.target.result); db.customers = imported.customers || []; db.expenses = imported.expenses || []; db.history = imported.history || []; db.bank = imported.bank || { name: '', acc: '' }; saveData(); showToast("Data Restored Successfully", "success"); setTimeout(() => location.reload(), 1500); } catch (err) { showToast("Invalid Format File", "error"); } }; reader.readAsText(event.target.files[0]); };
 
+// ✨ NEW: Toggle Arrears Filter Logic ✨
+window.toggleArrearsFilter = () => {
+    triggerHaptic();
+    showArrearsOnly = !showArrearsOnly;
+    const btn = document.getElementById('arrearsFilterBtn');
+    if(showArrearsOnly) {
+        btn.classList.add('active');
+    } else {
+        btn.classList.remove('active');
+    }
+    renderMaster();
+};
+
 window.renderMaster = () => { 
     const list = document.getElementById('CST-list-container'); if(!list) return; list.innerHTML = '';
     const search = (document.getElementById('mainSearch')?.value || "").toLowerCase();
     let renderedCount = 0;
+    
     db.customers.forEach(c => {
+        const arrData = window.getArrearsData(c);
+        
+        // Skip if filter is on and they don't owe money
+        if (showArrearsOnly && !arrData.isOwed) return;
+
         if(c.name.toLowerCase().includes(search) || (c.street||"").toLowerCase().includes(search)) {
             renderedCount++;
-            const arrData = window.getArrearsData(c);
             const arrearsBadge = arrData.isOwed ? `<span class="CST-badge badge-unpaid">OWES £${arrData.total.toFixed(2)}</span>` : `<span class="CST-badge badge-paid">PAID</span>`;
             const div = document.createElement('div'); div.className = 'CST-card-item'; div.onclick = () => showCustomerBriefing(c.id);
             div.innerHTML = `<div class="CST-card-top"><div><strong style="font-size:20px;">${escapeHTML(c.name)}</strong><br><small style="color:var(--accent); font-weight:800;">${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}</small></div><div style="font-weight:950; font-size:22px;">£${(parseFloat(c.price)||0).toFixed(2)}</div></div><div class="CST-card-badges">${arrearsBadge}</div>`;
             list.appendChild(div);
         }
     });
-    if (renderedCount === 0) list.innerHTML = `<div class="empty-state"><span class="empty-icon">👻</span><div class="empty-text">No Customers Found</div></div>`;
+    
+    // ✨ NEW: Actionable Empty State ✨
+    if (renderedCount === 0) {
+        list.innerHTML = `<div class="empty-state">
+            <span class="empty-icon">👻</span>
+            <div class="empty-text">No Customers Found</div>
+            <button class="ADM-save-btn" style="width: 220px; font-size: 14px; height: 50px!important; margin-top: 20px; box-shadow: 0 5px 15px rgba(0,122,255,0.2);" onclick="openAddCustomerModal()">➕ ADD CUSTOMER</button>
+        </div>`;
+    }
 };
 
 window.viewWeek = (num) => { triggerHaptic(); curWeek = num; openTab('week-view-root'); renderWeek(); };
@@ -250,7 +308,17 @@ window.setWorkingDay = (day, btn) => { triggerHaptic(); workingDay = day; docume
 window.renderWeek = () => { 
     const list = document.getElementById('WEE-list-container'); if(!list) return; list.innerHTML = '';
     let customersToday = db.customers.filter(c => c.week == curWeek && c.day == workingDay);
-    if(customersToday.length === 0) return list.innerHTML = `<div class="empty-state"><span class="empty-icon">🏖️</span><div class="empty-text">Zero Jobs Today</div><div class="empty-sub">Enjoy the day off!</div></div>`;
+    
+    // ✨ NEW: Actionable Empty State ✨
+    if(customersToday.length === 0) {
+        list.innerHTML = `<div class="empty-state">
+            <span class="empty-icon">🏖️</span>
+            <div class="empty-text">Zero Jobs Today</div>
+            <div class="empty-sub">Enjoy the day off, or add a job!</div>
+            <button class="ADM-save-btn" style="width: 220px; font-size: 14px; height: 50px!important; margin-top: 20px; box-shadow: 0 5px 15px rgba(0,122,255,0.2);" onclick="openAddCustomerModal()">➕ ADD CUSTOMER</button>
+        </div>`;
+        return;
+    }
 
     customersToday.forEach(c => {
         const arrData = window.getArrearsData(c);
