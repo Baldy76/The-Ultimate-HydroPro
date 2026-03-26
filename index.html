@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v2.7</title>
+    <title>Ultimate Hydro Pro v2.8</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=27">
+    <link rel="stylesheet" href="styles.css?v=28">
 </head>
 <body class="light-mode">
 
@@ -59,9 +59,9 @@
             </div>
             <div style="padding: 0 20px 30px;">
                 <h3 class="ADM-hdr" style="text-align: left; margin-bottom: 10px; padding-left: 5px;">Quick Actions</h3>
-                <div style="display:flex; gap:15px;">
-                    <button class="ADM-util-btn blue" style="height: 60px!important; border-radius: 20px; font-size: 14px;" onclick="openAddCustomerModal()">➕ Add Cust</button>
-                    <button class="ADM-util-btn grey" style="height: 60px!important; border-radius: 20px; font-size: 14px;" onclick="openExpenseModal()">🛒 Log Exp</button>
+                <div style="display:flex; gap:15px; width: 100%;">
+                    <button class="ADM-util-btn blue" style="flex: 1; width: auto!important; height: 60px!important; border-radius: 20px; font-size: 14px;" onclick="openAddCustomerModal()">➕ Add Cust</button>
+                    <button class="ADM-util-btn grey" style="flex: 1; width: auto!important; height: 60px!important; border-radius: 20px; font-size: 14px;" onclick="openExpenseModal()">🛒 Log Exp</button>
                 </div>
             </div>
         </section>
@@ -83,9 +83,9 @@
                 <button class="WEE-day-btn" id="day-Sat" onclick="setWorkingDay('Sat', this)">S</button>
                 <button class="WEE-day-btn" id="day-Sun" onclick="setWorkingDay('Sun', this)">S</button>
             </div>
-            <div style="display:flex; gap:10px; margin: 0 20px 10px; padding:0 5px;">
-                <button class="ADM-save-btn" style="margin:0; background: var(--text); color: var(--bg); flex: 2;" onclick="routeMyDay()">📍 ROUTE</button>
-                <button class="ADM-save-btn" style="margin:0; background: transparent; border: 2px solid var(--accent); color: var(--accent); box-shadow: none; flex: 1; font-size:13px;" onclick="openTomorrowModal()">🔮 TMRW</button>
+            <div style="display:flex; gap:10px; margin: 0 20px 10px; width: calc(100% - 40px);">
+                <button class="ADM-save-btn" style="margin:0; flex: 2; width: auto!important; background: var(--text); color: var(--bg);" onclick="routeMyDay()">📍 ROUTE</button>
+                <button class="ADM-save-btn" style="margin:0; flex: 1; width: auto!important; background: transparent; border: 2px solid var(--accent); color: var(--accent); box-shadow: none; font-size:13px;" onclick="openTomorrowModal()">🔮 TMRW</button>
             </div>
             <div id="WEE-progress-dashboard"></div>
             <div id="WEE-list-container"></div>
@@ -144,7 +144,6 @@
 
             <div class="ADM-card" style="border: 2px solid var(--accent);">
                 <h3 class="ADM-hdr" style="color: var(--accent); font-weight: 950;">HMRC Tax Engine 🇬🇧</h3>
-                
                 <div style="margin-bottom: 20px;">
                     <label style="font-size: 12px; font-weight: 800; opacity: 0.6; text-transform: uppercase;">Select Tax Year (Apr 6 - Apr 5)</label>
                     <select id="taxYearSelect" style="width: 100%; height: 45px; border-radius: 12px; background: var(--ios-grey); border: none; font-size: 16px; font-weight: 800; color: var(--text); padding: 0 15px; margin-top: 5px;">
@@ -154,8 +153,7 @@
                         <option value="2027">2027 / 2028</option>
                     </select>
                 </div>
-
-                <div style="display: flex; gap: 10px; margin-bottom: 25px;">
+                <div style="display: flex; gap: 10px; margin-bottom: 25px; width: 100%;">
                     <div style="flex: 1;">
                         <label style="font-size: 12px; font-weight: 800; opacity: 0.6; text-transform: uppercase;">MTD Quarter</label>
                         <select id="taxQuarterSelect" style="width: 100%; height: 45px; border-radius: 12px; background: var(--ios-grey); border: none; font-size: 16px; font-weight: 800; color: var(--text); padding: 0 15px; margin-top: 5px;">
@@ -165,11 +163,10 @@
                             <option value="Q4">Q4 (Jan-Apr)</option>
                         </select>
                     </div>
-                    <div style="display: flex; align-items: flex-end;">
-                        <button class="ADM-save-btn" style="margin:0; height: 45px!important; width: 120px; font-size: 12px; background: var(--card); color: var(--text); border: 2px solid var(--ios-grey); box-shadow: none;" onclick="cmdGenerateMTD()">📊 MTD CSV</button>
+                    <div style="display: flex; align-items: flex-end; flex: 1;">
+                        <button class="ADM-save-btn" style="margin:0; width: 100%; height: 45px!important; font-size: 12px; background: var(--card); color: var(--text); border: 2px solid var(--ios-grey); box-shadow: none;" onclick="cmdGenerateMTD()">📊 MTD CSV</button>
                     </div>
                 </div>
-                
                 <button class="ADM-save-btn" style="margin-top:0; background: var(--accent); box-shadow: 0 8px 20px rgba(0, 122, 255, 0.25);" onclick="cmdGenerateTaxPDF()">📄 ANNUAL TAX PDF</button>
             </div>
 
@@ -188,15 +185,15 @@
                     <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#00d639; color:#000; box-shadow:0 5px 15px rgba(0,214,57,0.2);" onclick="exportToSage()">Sage</button>
                     <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#00b2a9; box-shadow:0 5px 15px rgba(0,178,169,0.2);" onclick="exportToFreeAgent()">FreeAgent</button>
                 </div>
-
-                <div class="ADM-util-row">
-                    <button class="ADM-util-btn grey" onclick="exportData()">📤 Backup App</button>
-                    <button class="ADM-util-btn grey" onclick="document.getElementById('importFile').click()">📥 Restore App</button>
+                
+                <div style="display: flex; gap: 15px; width: 100%; margin-bottom: 15px;">
+                    <button class="ADM-util-btn grey" style="flex: 1; width: auto!important; height: 70px!important; margin: 0;" onclick="exportData()">📤 Backup</button>
+                    <button class="ADM-util-btn grey" style="flex: 1; width: auto!important; height: 70px!important; margin: 0;" onclick="document.getElementById('importFile').click()">📥 Restore</button>
                     <input type="file" id="importFile" hidden onchange="importData(event)" accept=".json">
                 </div>
                 <button class="ADM-util-btn green" onclick="cmdCycleMonth()">🚀 START NEW MONTH</button>
                 <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v2.7</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v2.8</footer>
             </div>
         </section>
 
@@ -244,9 +241,18 @@
             <div class="ADM-row"><span>📍</span><input type="text" id="cPostcode" placeholder="Postcode"></div>
             <div class="ADM-row"><span>📞</span><input type="tel" id="cPhone" placeholder="Phone Number"></div>
             <div class="ADM-row"><span>💰</span><input type="number" id="cPrice" placeholder="Price £"></div>
-            <div class="ADM-row"><span>🔄</span><select id="cFreq"><option value="4">4 Weekly</option><option value="8">8 Weekly</option><option value="12">12 Weekly</option></select></div>
-            <div class="ADM-row"><span>📅</span><select id="cWeek"><option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option><option value="4">Week 4</option><option value="5">Week 5</option></select></div>
-            <div class="ADM-row"><span>📆</span><select id="cDay"><option value="Mon">Monday</option><option value="Tue">Tuesday</option><option value="Wed">Wednesday</option><option value="Thu">Thursday</option><option value="Fri">Friday</option><option value="Sat">Saturday</option><option value="Sun">Sunday</option></select></div>
+            <div class="ADM-row">
+                <span>🔄</span>
+                <select id="cFreq"><option value="4">4 Weekly</option><option value="8">8 Weekly</option><option value="12">12 Weekly</option></select>
+            </div>
+            <div class="ADM-row">
+                <span>📅</span>
+                <select id="cWeek"><option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option><option value="4">Week 4</option><option value="5">Week 5</option></select>
+            </div>
+            <div class="ADM-row">
+                <span>📆</span>
+                <select id="cDay"><option value="Mon">Monday</option><option value="Tue">Tuesday</option><option value="Wed">Wednesday</option><option value="Thu">Thursday</option><option value="Fri">Friday</option><option value="Sat">Saturday</option><option value="Sun">Sunday</option></select>
+            </div>
             <div class="ADM-row" style="border-bottom:none; height: auto!important; align-items: flex-start; padding-top: 15px;">
                 <span style="margin-top: 2px;">📝</span>
                 <textarea id="cNotes" placeholder="Additional Notes (e.g. Beware of dog...)" rows="3"></textarea>
@@ -320,6 +326,6 @@
 
     <div id="print-area"></div>
 
-    <script src="app.js?v=27" defer></script>
+    <script src="app.js?v=28" defer></script>
 </body>
 </html>
