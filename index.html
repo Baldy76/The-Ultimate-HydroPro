@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v2.1</title>
+    <title>Ultimate Hydro Pro v2.2</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=21">
+    <link rel="stylesheet" href="styles.css?v=22">
 </head>
 <body class="light-mode">
 
@@ -72,7 +72,16 @@
         </section>
         
         <section id="week-view-root" class="tab-content" data-title="Route">
-            <div class="WEE-day-selector" style="padding-top: 5px;">
+            
+            <div class="theme-segmented-control" style="margin: 5px auto 15px; width: calc(100% - 40px); border-radius: 20px; height: 45px;">
+                <button id="wk-btn-1" class="segment active" onclick="setWorkingWeek(1)">W1</button>
+                <button id="wk-btn-2" class="segment" onclick="setWorkingWeek(2)">W2</button>
+                <button id="wk-btn-3" class="segment" onclick="setWorkingWeek(3)">W3</button>
+                <button id="wk-btn-4" class="segment" onclick="setWorkingWeek(4)">W4</button>
+                <button id="wk-btn-5" class="segment" onclick="setWorkingWeek(5)">W5</button>
+            </div>
+
+            <div class="WEE-day-selector" style="margin: 0 auto 20px; padding-bottom: 0; width: calc(100% - 40px);">
                 <button class="WEE-day-btn active" id="day-Mon" onclick="setWorkingDay('Mon', this)">M</button>
                 <button class="WEE-day-btn" id="day-Tue" onclick="setWorkingDay('Tue', this)">T</button>
                 <button class="WEE-day-btn" id="day-Wed" onclick="setWorkingDay('Wed', this)">W</button>
@@ -80,14 +89,6 @@
                 <button class="WEE-day-btn" id="day-Fri" onclick="setWorkingDay('Fri', this)">F</button>
                 <button class="WEE-day-btn" id="day-Sat" onclick="setWorkingDay('Sat', this)">S</button>
                 <button class="WEE-day-btn" id="day-Sun" onclick="setWorkingDay('Sun', this)">S</button>
-            </div>
-
-            <div class="theme-segmented-control" style="margin: 0 25px 20px; border-radius: 20px; height: 45px;">
-                <button id="wk-btn-1" class="segment active" onclick="setWorkingWeek(1)">W1</button>
-                <button id="wk-btn-2" class="segment" onclick="setWorkingWeek(2)">W2</button>
-                <button id="wk-btn-3" class="segment" onclick="setWorkingWeek(3)">W3</button>
-                <button id="wk-btn-4" class="segment" onclick="setWorkingWeek(4)">W4</button>
-                <button id="wk-btn-5" class="segment" onclick="setWorkingWeek(5)">W5</button>
             </div>
             
             <div style="display:flex; gap:10px; margin: 0 20px 10px; padding:0 5px;">
@@ -178,7 +179,7 @@
                 </div>
                 <button class="ADM-util-btn green" onclick="cmdCycleMonth()">🚀 START NEW MONTH</button>
                 <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v2.1</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v2.2</footer>
             </div>
         </section>
 
@@ -290,6 +291,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=21" defer></script>
+    <script src="app.js?v=22" defer></script>
 </body>
 </html>
