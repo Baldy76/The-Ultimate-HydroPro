@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v1.7</title>
+    <title>Ultimate Hydro Pro v1.8</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=17">
+    <link rel="stylesheet" href="styles.css?v=18">
 </head>
 <body class="light-mode">
 
@@ -59,7 +59,9 @@
                 <button class="WEE-day-btn" onclick="setWorkingDay('Sun', this)">S</button>
             </div>
             
-            <button class="ADM-save-btn" style="width: calc(100% - 40px); margin: 0 20px 20px; background: var(--text); color: var(--bg);" onclick="routeMyDay()">📍 ROUTE MY DAY</button>
+            <button class="ADM-save-btn" style="width: calc(100% - 40px); margin: 0 20px 10px; background: var(--text); color: var(--bg);" onclick="routeMyDay()">📍 ROUTE MY DAY</button>
+            
+            <div id="WEE-progress-dashboard"></div>
             
             <div id="WEE-list-container"></div>
         </section>
@@ -79,7 +81,6 @@
 
         <section id="weather-root" class="tab-content" data-title="Weather">
             <div id="ptr-indicator" class="ptr-hidden">⬇️ Pull to Refresh</div>
-            
             <div id="WTH-dashboard">
                 <div class="empty-state"><span class="empty-icon">📡</span><div class="empty-text">Syncing Radar...</div></div>
             </div>
@@ -144,7 +145,7 @@
                 </div>
                 <button class="ADM-util-btn green" onclick="cmdCycleMonth()">🚀 START NEW MONTH</button>
                 <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v1.7</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v1.8</footer>
             </div>
         </section>
 
@@ -256,6 +257,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=17" defer></script>
+    <script src="app.js?v=18" defer></script>
 </body>
 </html>
