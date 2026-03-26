@@ -50,7 +50,6 @@ body.dark-mode .toast { background: rgba(255,255,255,0.9); color: black; }
 .segment { flex: 1; padding: 12px; border-radius: 12px; border: none; background: transparent; font-weight: 800; color: var(--text); opacity: 0.5; font-size: 15px; display: flex; justify-content: center; align-items: center; gap: 8px; transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); }
 .segment.active { background: var(--card); opacity: 1; box-shadow: 0 3px 8px rgba(0,0,0,0.1); color: var(--text); }
 
-/* ✨ NEW: RAISED CENTER FAB BOTTOM NAV ✨ */
 #BOTTOM-NAV { position: fixed; bottom: 0; left: 0; width: 100%; height: calc(var(--h-nav) + env(safe-area-inset-bottom)); background: rgba(242, 242, 247, 0.85); -webkit-backdrop-filter: blur(25px); backdrop-filter: blur(25px); border-top: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 1000; }
 body.dark-mode #BOTTOM-NAV { background: rgba(0, 0, 0, 0.85); border-top: 1px solid rgba(255,255,255,0.05); }
 .nav-item { background: none; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text); opacity: 0.4; transition: 0.2s ease; width: 20%; height: 100%; padding-top: 5px; }
@@ -203,10 +202,22 @@ body.dark-mode .CMD-notes-box { color: #ff9500; }
 .CMD-history-box { background: var(--ios-grey); padding: 15px; border-radius: 20px; }
 .CMD-history-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-weight: 800; }
 .CMD-history-row:last-child { border-bottom: none; }
-.CMD-action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px; }
-.CMD-action-btn { background: var(--ios-grey); border: none; border-radius: 20px; padding: 15px 5px; font-weight: 900; color: var(--text); display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 11px; text-align: center; font-family: 'Plus Jakarta Sans', sans-serif;}
+
+/* ✨ UI UPGRADE: Switched to 4 Columns for the action grid! ✨ */
+.CMD-action-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
+
+.CMD-action-btn { background: var(--ios-grey); border: none; border-radius: 20px; padding: 12px 2px; font-weight: 900; color: var(--text); display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 10px; text-align: center; font-family: 'Plus Jakarta Sans', sans-serif;}
 .CMD-action-btn.whatsapp { background: rgba(52, 199, 89, 0.15); color: var(--success); }
 .CMD-action-btn.sms { background: rgba(0, 122, 255, 0.15); color: var(--accent); }
 .CMD-action-btn.skip { background: rgba(255, 149, 0, 0.15); color: #cc7700; }
 
 #G-FOOTER { text-align: center; font-size: 10px; font-weight: 900; opacity: 0.35; text-transform: uppercase; letter-spacing: 1.5px; margin: 20px 0 0; width: 100%; color: var(--text); }
+
+/* ✨ NEW: PRINT INVOICE CSS ✨ */
+#print-area { display: none; }
+@media print {
+    body * { visibility: hidden; }
+    #print-area, #print-area * { visibility: visible; }
+    #print-area { display: block; position: absolute; left: 0; top: 0; width: 100%; padding: 20px; background: white; color: black; z-index: 999999; }
+    .modal-overlay { display: none !important; }
+}
