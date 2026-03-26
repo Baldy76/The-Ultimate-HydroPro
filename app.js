@@ -65,14 +65,15 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+// FIXED: DOUBLE QUOTES USED FOR SAFE STRING REPLACEMENT
 const escapeHTML = (str) => {
     if (!str) return '';
     return String(str)
-        .replace(/&/g, '&')
-        .replace(/</g, '<')
-        .replace(/>/g, '>')
-        .replace(/"/g, '"')
-        .replace(/'/g, '''); 
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;"); 
 };
 
 window.getArrearsData = (c) => {
@@ -92,10 +93,9 @@ window.getArrearsData = (c) => {
 // --- ✨ DATA ENGINE BOOT SEQUENCE ✨ ---
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        await idb.init(); // Fire up IndexedDB
+        await idb.init(); 
         let savedData = await idb.get('master_db');
         
-        // Auto-Migration Bridge from LocalStorage
         if (!savedData) {
             const legacyData = localStorage.getItem(DB_KEY);
             if (legacyData) {
@@ -145,7 +145,6 @@ window.setThemeMode = (isDark) => {
     if(document.getElementById('finances-root').classList.contains('active')) renderFinances();
 };
 
-// FIRE AND FORGET ASYNC SAVING. NO MORE UI LAG.
 window.saveData = () => { idb.set('master_db', db); };
 
 window.openTab = (id, btnEl = null) => {
@@ -347,6 +346,7 @@ window.renderWeek = () => {
     });
 };
 
+/* FIXED OFFICIAL UNIVERSAL GOOGLE MAPS INTENT URL */
 window.routeMyDay = () => {
     triggerHaptic();
     let todaysJobs = db.customers.filter(c => c.week == curWeek && c.day == workingDay);
@@ -405,6 +405,8 @@ window.showJobBriefing = (id) => {
     const container = document.getElementById('briefingData');
     const arrData = window.getArrearsData(c);
     const mapQuery = encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`);
+    
+    /* FIXED OFFICIAL UNIVERSAL GOOGLE MAPS INTENT URL */
     const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${mapQuery}`;
     
     const notesHtml = c.notes ? `<div class="CMD-notes-box">📝 ${escapeHTML(c.notes)}</div>` : '';
