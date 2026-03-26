@@ -1,3 +1,4 @@
+/* --- 🎛️ MASTER DESIGN TOKENS --- */
 :root {
     --accent: #007aff;
     --bg: #f2f2f7;
@@ -20,7 +21,6 @@ button:active { transform: scale(0.96) !important; opacity: 0.8; }
 
 body { background: var(--bg); color: var(--text); margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
 
-/* ✨ UI UPGRADE: Fluid Tab Transitions ✨ */
 .tab-content { display: none !important; width: 100%; opacity: 0; }
 .tab-content.active { 
     display: flex !important; flex-direction: column; 
@@ -84,6 +84,27 @@ body.dark-mode #BOTTOM-NAV { background: rgba(0, 0, 0, 0.85); border-top: 1px so
 .CST-filter-btn { background: var(--card); border: 2px solid var(--ios-grey); color: var(--text); border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; opacity: 0.7; transition: all 0.2s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.03); display: block; margin: 0 auto; }
 .CST-filter-btn.active { background: rgba(255, 69, 58, 0.15); color: var(--danger); border-color: transparent; opacity: 1; box-shadow: 0 5px 15px rgba(255, 69, 58, 0.2); transform: scale(1.02); }
 
+/* --- ✨ NEW: SWIPE & DRAG UI CLASSES ✨ --- */
+#WEE-list-container { position: relative; width: 100%; }
+
+.swipe-wrapper { position: relative; margin: 0 25px 12px; border-radius: 30px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.04); background: var(--ios-grey); transform: translate3d(0,0,0); }
+.swipe-wrapper.dragging { opacity: 0.8; transform: scale(1.02); box-shadow: 0 20px 40px rgba(0,0,0,0.15); z-index: 50; }
+
+.swipe-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: space-between; align-items: center; border-radius: 30px; font-size: 24px; font-weight: 900; padding: 0 30px; color: white; }
+.swipe-bg .action-left { color: var(--success); width: 50%; text-align: left; }
+.swipe-bg .action-right { color: var(--danger); width: 50%; text-align: right; }
+
+.swipe-fg { position: relative; background: var(--card); border-radius: 30px; display: flex; justify-content: space-between; align-items: center; padding: 20px; min-height: 110px; z-index: 2; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); touch-action: pan-y; }
+.swipe-fg.swiping { transition: none; }
+
+.drag-handle { padding: 10px; font-size: 28px; color: var(--ios-grey); opacity: 0.8; touch-action: none; cursor: grab; margin-left: 10px; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
+.drag-handle:active { opacity: 1; color: var(--accent); }
+
+/* --- 📡 NEW: PULL TO REFRESH INDICATOR --- */
+#ptr-indicator { text-align: center; padding: 15px; font-size: 14px; font-weight: 800; color: var(--accent); opacity: 0; transition: opacity 0.2s ease, transform 0.2s ease; transform: translateY(-10px); }
+#ptr-indicator.visible { opacity: 1; transform: translateY(0); }
+
+/* The standard card item logic for non-swipeable lists (Cust tab) */
 .CST-card-item { background: var(--card); margin: 0 25px 12px; padding: 20px; border-radius: 30px; display: flex; flex-direction: column; justify-content: center; gap: 10px; border: 1px solid rgba(0,0,0,0.02); min-height: 110px; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.04) !important; transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .CST-card-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
 .CST-card-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
@@ -144,21 +165,20 @@ body.dark-mode #BOTTOM-NAV { background: rgba(0, 0, 0, 0.85); border-top: 1px so
 
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 9999; display: flex; align-items: center; justify-content: center; opacity: 1; visibility: visible; transition: opacity 0.3s ease, visibility 0.3s ease; -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
 .modal-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-.modal-content { background: var(--card); padding: 30px; border-radius: 45px; width: 92%; max-height: 85vh; overflow-y: auto; color: var(--text); transform: scale(1); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); will-change: transform; }
+.modal-content { position: relative; background: var(--card); padding: 30px; border-radius: 45px; width: 92%; max-height: 85vh; overflow-y: auto; color: var(--text); transform: scale(1); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); will-change: transform; }
 .modal-overlay.hidden .modal-content { transform: scale(0.9); }
 .modal-content.bottom-sheet { position: absolute; bottom: 0; width: 100%; border-radius: 40px 40px 0 0; padding: 20px 25px calc(30px + env(safe-area-inset-bottom)); transform: translateY(0); max-height: 90vh; }
 .modal-overlay.hidden .modal-content.bottom-sheet { transform: translateY(100%); }
 .modal-drag-pill { width: 40px; height: 5px; background: var(--text); opacity: 0.2; border-radius: 5px; margin: 0 auto 20px; }
 
-/* Hidden utility class */
-.hidden { display: none !important; }
+.close-x-btn { position: absolute; top: 20px; right: 20px; width: 28px; height: 28px; border-radius: 50%; background: #ff5f56; color: white; border: none; font-size: 14px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(255, 95, 86, 0.3); z-index: 100; transition: transform 0.1s ease; }
+.close-x-btn:active { transform: scale(0.9); }
 
 .CMD-header { border-bottom: 3px solid var(--accent); padding-bottom: 15px; margin-bottom: 15px; position: relative; }
-.CMD-header h2 { margin: 0; font-size: 32px; font-weight: 950; padding-right: 40px; }
+.CMD-header h2 { margin: 0; font-size: 32px; font-weight: 950; padding-right: 80px; }
 .CMD-header-sub { font-size: 18px; opacity: 0.6; font-weight: 800; margin-top: 5px; }
 
-/* ✨ UI UPGRADE: Header Edit Button ✨ */
-.CMD-header-edit-btn { position: absolute; top: 0; right: 0; background: none; border: none; font-size: 26px; opacity: 0.5; transition: opacity 0.2s; padding: 5px; }
+.CMD-header-edit-btn { position: absolute; top: 0; right: 45px; background: none; border: none; font-size: 26px; opacity: 0.5; transition: opacity 0.2s; padding: 5px; }
 .CMD-header-edit-btn:active { opacity: 1; }
 
 .CMD-alert-success { color: var(--success); text-align: center; font-weight: 950; margin: 15px 0; font-size: 18px; }
