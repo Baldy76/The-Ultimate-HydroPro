@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v2.3</title>
+    <title>Ultimate Hydro Pro v2.4</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=23">
+    <link rel="stylesheet" href="styles.css?v=24">
 </head>
 <body class="light-mode">
 
@@ -29,12 +29,10 @@
     <main id="G-VIEWPORT">
 
         <section id="home-root" class="tab-content active" data-title="Dashboard">
-            
             <div style="padding: 0 25px 15px;">
                 <p style="margin:0; opacity:0.5; font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:1px;" id="home-date">LOADING DATE...</p>
                 <h2 style="margin:0; font-size:32px; font-weight:950; letter-spacing:-1px;">Good Morning.</h2>
             </div>
-
             <div id="home-weather-pill" class="ADM-card" style="margin: 0 20px 20px; padding: 15px 20px; display:flex; align-items:center; gap: 15px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.03)!important;" onclick="openTab('weather-root', 'nav-wth-btn')">
                 <span style="font-size: 30px;" id="hw-icon">🌤️</span>
                 <div style="flex:1;">
@@ -43,14 +41,12 @@
                 </div>
                 <div style="opacity:0.3; font-size:20px;">›</div>
             </div>
-
             <div class="FIN-hero-iron" style="border-color: var(--success); padding: 25px; margin-bottom: 20px;">
                 <small style="opacity:0.5; font-weight:900; text-transform:uppercase; letter-spacing:1px;">Today's Route Pipeline</small>
                 <div id="home-jobs-value" style="font-size: 45px; font-weight: 950; color: var(--success); line-height: 1.1; margin-top: 5px;">£0.00</div>
                 <div id="home-jobs-count" style="font-weight: 800; opacity: 0.7; margin-bottom: 20px; font-size: 15px;">0 Jobs Scheduled</div>
                 <button class="ADM-save-btn" style="margin-top: 0; height: 60px!important; box-shadow: 0 10px 25px rgba(52, 199, 89, 0.25); background: var(--success);" onclick="openTab('week-view-root', 'nav-route-btn')">🚀 START ROUTE</button>
             </div>
-
             <div class="FIN-bubble-row" style="margin-bottom: 20px;">
                 <div class="FIN-bubble" style="flex-direction:column; align-items:flex-start;">
                     <small>TOTAL ARREARS</small>
@@ -61,7 +57,6 @@
                     <strong style="color:var(--success); font-size:22px;" id="home-cash">£0.00</strong>
                 </div>
             </div>
-
             <div style="padding: 0 20px 30px;">
                 <h3 class="ADM-hdr" style="text-align: left; margin-bottom: 10px; padding-left: 5px;">Quick Actions</h3>
                 <div style="display:flex; gap:15px;">
@@ -79,7 +74,6 @@
                 <button id="wk-btn-4" class="segment" onclick="setWorkingWeek(4)">W4</button>
                 <button id="wk-btn-5" class="segment" onclick="setWorkingWeek(5)">W5</button>
             </div>
-
             <div class="WEE-day-selector" style="margin: 0 auto 20px; padding-bottom: 0; width: calc(100% - 40px);">
                 <button class="WEE-day-btn active" id="day-Mon" onclick="setWorkingDay('Mon', this)">M</button>
                 <button class="WEE-day-btn" id="day-Tue" onclick="setWorkingDay('Tue', this)">T</button>
@@ -89,12 +83,10 @@
                 <button class="WEE-day-btn" id="day-Sat" onclick="setWorkingDay('Sat', this)">S</button>
                 <button class="WEE-day-btn" id="day-Sun" onclick="setWorkingDay('Sun', this)">S</button>
             </div>
-            
             <div style="display:flex; gap:10px; margin: 0 20px 10px; padding:0 5px;">
                 <button class="ADM-save-btn" style="margin:0; background: var(--text); color: var(--bg); flex: 2;" onclick="routeMyDay()">📍 ROUTE</button>
                 <button class="ADM-save-btn" style="margin:0; background: transparent; border: 2px solid var(--accent); color: var(--accent); box-shadow: none; flex: 1; font-size:13px;" onclick="openTomorrowModal()">🔮 TMRW</button>
             </div>
-
             <div id="WEE-progress-dashboard"></div>
             <div id="WEE-list-container"></div>
         </section>
@@ -122,14 +114,12 @@
         <section id="finances-root" class="tab-content" data-title="Finances">
             <div id="FIN-dashboard"></div>
             <div id="FIN-split-dashboard"></div>
-
             <div class="ADM-card" style="padding: 25px 15px; margin-top: 20px;">
                 <h3 class="ADM-hdr" style="margin-bottom: 20px;">Revenue Pipeline</h3>
                 <div style="height: 300px; position: relative;">
                     <canvas id="financeChartCanvas"></canvas>
                 </div>
             </div>
-            
             <div class="ADM-card">
                 <h3 class="ADM-hdr">Log Expense</h3>
                 <div class="ADM-row"><span>🛒</span><input type="text" id="fExpDesc" placeholder="Description..."></div>
@@ -170,15 +160,23 @@
             </div>
             
             <div class="ADM-util-vault">
-                <button class="ADM-util-btn blue" onclick="exportToQuickBooks()">📊 QUICKBOOKS EXPORT</button>
+                
+                <h3 class="ADM-hdr" style="text-align: left; margin: 0 0 10px;">Accounting Sync</h3>
+                <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0; margin-bottom: 20px;">
+                    <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#2ca01c; box-shadow:0 5px 15px rgba(44,160,28,0.2);" onclick="exportToQuickBooks()">QuickBooks</button>
+                    <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#13b5ea; box-shadow:0 5px 15px rgba(19,181,234,0.2);" onclick="exportToXero()">Xero</button>
+                    <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#00d639; color:#000; box-shadow:0 5px 15px rgba(0,214,57,0.2);" onclick="exportToSage()">Sage</button>
+                    <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#00b2a9; box-shadow:0 5px 15px rgba(0,178,169,0.2);" onclick="exportToFreeAgent()">FreeAgent</button>
+                </div>
+
                 <div class="ADM-util-row">
-                    <button class="ADM-util-btn grey" onclick="exportData()">📤 Backup</button>
-                    <button class="ADM-util-btn grey" onclick="document.getElementById('importFile').click()">📥 Restore</button>
+                    <button class="ADM-util-btn grey" onclick="exportData()">📤 Backup App</button>
+                    <button class="ADM-util-btn grey" onclick="document.getElementById('importFile').click()">📥 Restore App</button>
                     <input type="file" id="importFile" hidden onchange="importData(event)" accept=".json">
                 </div>
                 <button class="ADM-util-btn green" onclick="cmdCycleMonth()">🚀 START NEW MONTH</button>
                 <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v2.3</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v2.4</footer>
             </div>
         </section>
 
@@ -187,11 +185,7 @@
     <nav id="BOTTOM-NAV">
         <button id="nav-route-btn" class="nav-item" onclick="openTab('week-view-root', 'nav-route-btn')"><span class="nav-icon">📍</span><small>Route</small></button>
         <button id="nav-cust-btn" class="nav-item" onclick="openTab('master-root', 'nav-cust-btn')"><span class="nav-icon">👥</span><small>Custs</small></button>
-        
-        <div class="nav-fab-wrapper">
-            <button id="nav-home-btn" class="home-fab active" onclick="openTab('home-root', 'nav-home-btn')">🏠</button>
-        </div>
-        
+        <div class="nav-fab-wrapper"><button id="nav-home-btn" class="home-fab active" onclick="openTab('home-root', 'nav-home-btn')">🏠</button></div>
         <button id="nav-fin-btn" class="nav-item" onclick="openTab('finances-root', 'nav-fin-btn')"><span class="nav-icon">💰</span><small>Finance</small></button>
         <button id="nav-set-btn" class="nav-item" onclick="openTab('admin-root', 'nav-set-btn')"><span class="nav-icon">⚙️</span><small>Settings</small></button>
     </nav>
@@ -207,16 +201,12 @@
             <div class="ADM-row"><span>📍</span><input type="text" id="cPostcode" placeholder="Postcode"></div>
             <div class="ADM-row"><span>📞</span><input type="tel" id="cPhone" placeholder="Phone Number"></div>
             <div class="ADM-row"><span>💰</span><input type="number" id="cPrice" placeholder="Price £"></div>
-            
             <div class="ADM-row">
                 <span>🔄</span>
                 <select id="cFreq">
-                    <option value="4">4 Weekly</option>
-                    <option value="8">8 Weekly</option>
-                    <option value="12">12 Weekly</option>
+                    <option value="4">4 Weekly</option><option value="8">8 Weekly</option><option value="12">12 Weekly</option>
                 </select>
             </div>
-
             <div class="ADM-row">
                 <span>📅</span>
                 <select id="cWeek">
@@ -302,6 +292,6 @@
 
     <div id="print-area"></div>
 
-    <script src="app.js?v=23" defer></script>
+    <script src="app.js?v=24" defer></script>
 </body>
 </html>
