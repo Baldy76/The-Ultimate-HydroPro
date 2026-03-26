@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v1.5</title>
+    <title>Ultimate Hydro Pro v1.7</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=15">
+    <link rel="stylesheet" href="styles.css?v=17">
 </head>
 <body class="light-mode">
 
@@ -78,6 +78,8 @@
         </section>
 
         <section id="weather-root" class="tab-content" data-title="Weather">
+            <div id="ptr-indicator" class="ptr-hidden">⬇️ Pull to Refresh</div>
+            
             <div id="WTH-dashboard">
                 <div class="empty-state"><span class="empty-icon">📡</span><div class="empty-text">Syncing Radar...</div></div>
             </div>
@@ -142,7 +144,7 @@
                 </div>
                 <button class="ADM-util-btn green" onclick="cmdCycleMonth()">🚀 START NEW MONTH</button>
                 <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v1.5</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v1.7</footer>
             </div>
         </section>
 
@@ -159,6 +161,8 @@
     <div id="addCustomerModal" class="modal-overlay hidden" onclick="closeAddCustomerModal()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
+            <button class="close-x-btn" onclick="closeAddCustomerModal()">✕</button>
+            
             <div class="CMD-header">
                 <h2 id="customerModalTitle">Add Customer</h2>
             </div>
@@ -194,7 +198,7 @@
 
             <div class="ADM-row" style="border-bottom:none; height: auto!important; align-items: flex-start; padding-top: 15px;">
                 <span style="margin-top: 2px;">📝</span>
-                <textarea id="cNotes" placeholder="Additional Notes (e.g. Beware of dog, side gate code...)" rows="3"></textarea>
+                <textarea id="cNotes" placeholder="Additional Notes (e.g. Beware of dog...)" rows="3"></textarea>
             </div>
             
             <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
@@ -209,6 +213,7 @@
     <div id="briefingModal" class="modal-overlay hidden" onclick="closeBriefing()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
+            <button class="close-x-btn" onclick="closeBriefing()">✕</button>
             <div id="briefingData"></div>
         </div>
     </div>
@@ -216,6 +221,8 @@
     <div id="paymentModal" class="modal-overlay hidden" onclick="closePaymentModal()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
+            <button class="close-x-btn" onclick="closePaymentModal()">✕</button>
+
             <div class="CMD-header" style="border-bottom: none; text-align: center;">
                 <div class="CMD-header-sub" style="margin-bottom: 5px; color: var(--success);">SECURE CHECKOUT</div>
                 <h2 id="pay-name" style="font-size: 26px;">Customer Name</h2>
@@ -238,7 +245,8 @@
 
     <div id="confirmModal" class="modal-overlay hidden" onclick="closeConfirmModal()">
         <div class="modal-content" onclick="event.stopPropagation()" style="text-align: center;">
-            <div style="font-size: 40px; margin-bottom: 10px;" id="confirmIcon">⚠️</div>
+            <button class="close-x-btn" onclick="closeConfirmModal()">✕</button>
+            <div style="font-size: 40px; margin-bottom: 10px; margin-top: 15px;" id="confirmIcon">⚠️</div>
             <h2 style="margin: 0 0 10px; font-weight: 950;" id="confirmTitle">Are you sure?</h2>
             <p style="margin: 0 0 25px; opacity: 0.6; font-weight: 600; font-size: 16px;" id="confirmText">This action cannot be undone.</p>
             <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0;">
@@ -248,6 +256,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=15" defer></script>
+    <script src="app.js?v=17" defer></script>
 </body>
 </html>
