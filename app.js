@@ -65,7 +65,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// ✨ FIXED: 100% Syntax-safe HTML Escaping ✨
+// ✨ BULLETPROOF HTML ESCAPER ✨
 const escapeHTML = (str) => {
     if (!str) return '';
     return String(str)
@@ -73,7 +73,7 @@ const escapeHTML = (str) => {
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;"); 
+        .replace(/'/g, "&#039;"); 
 };
 
 window.getArrearsData = (c) => {
@@ -107,7 +107,7 @@ const initPTR = () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("Ultimate Hydro Pro v2.9 Booting...");
+    console.log("Ultimate Hydro Pro v3.0 Booting...");
     try {
         await idb.init(); 
         let savedData = await idb.get('master_db');
@@ -124,6 +124,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     applyTheme(localStorage.getItem('HP_Theme') === 'true');
     const bNameEl = document.getElementById('bName'); const bAccEl = document.getElementById('bAcc');
     if(bNameEl) bNameEl.value = db.bank.name; if(bAccEl) bAccEl.value = db.bank.acc;
+
+    // Load AI Key into settings
+    const aiKeyEl = document.getElementById('sAIKey');
+    if(aiKeyEl) aiKeyEl.value = localStorage.getItem('HP_AI_Key') || '';
 
     document.querySelectorAll('.WEE-day-btn').forEach(b => b.classList.remove('active'));
     const activeDayBtn = document.getElementById(`day-${workingDay}`);
@@ -190,6 +194,40 @@ window.renderHome = () => {
 
     document.getElementById('home-arrears').innerText = `£${totalArrears.toFixed(2)}`;
     document.getElementById('home-cash').innerText = `£${cashTotal.toFixed(2)}`;
+};
+
+// ✨ NEW: AI TEASER ENGINE ✨
+window.openAITeaserModal = () => {
+    triggerHaptic();
+    document.getElementById('aiKeyInputModal').value = localStorage.getItem('HP_AI_Key') || '';
+    document.getElementById('aiTeaserModal').classList.remove('hidden');
+};
+window.closeAITeaserModal = () => { document.getElementById('aiTeaserModal').classList.add('hidden'); };
+
+window.saveModalAIKey = () => {
+    triggerHaptic(); const key = document.getElementById('aiKeyInputModal').value.trim();
+    if(key) {
+        localStorage.setItem('HP_AI_Key', key);
+        const sAiKey = document.getElementById('sAIKey'); if(sAiKey) sAiKey.value = key;
+        showToast("AI Engine Connected! ✨", "success"); closeAITeaserModal();
+    } else { showToast("Please enter an API key", "error"); }
+};
+
+window.saveSettingsAIKey = () => {
+    triggerHaptic(); const key = document.getElementById('sAIKey').value.trim();
+    if(key) { localStorage.setItem('HP_AI_Key', key); showToast("AI Engine Secured! ✨", "success"); }
+    else { localStorage.removeItem('HP_AI_Key'); showToast("AI Engine Disabled.", "normal"); }
+};
+
+window.triggerAI = (context, id = null) => {
+    triggerHaptic(); const key = localStorage.getItem('HP_AI_Key');
+    if(!key) { openAITeaserModal(); } 
+    else {
+        // Dormant AI Engine Simulation
+        if(context === 'voice') showToast("Listening... (Awaiting v3.1 API endpoint)", "normal");
+        if(context === 'receipt') showToast("Scanning receipt... (Awaiting v3.1 Vision API)", "normal");
+        if(context === 'reply') showToast("Drafting reply... (Awaiting v3.1 Text API)", "normal");
+    }
 };
 
 window.openAddCustomerModal = (id = null) => { 
@@ -541,31 +579,6 @@ window.renderFinances = () => {
     }
 };
 
-window.renderWeek = () => { 
-    const list = document.getElementById('WEE-list-container'); if(!list) return; list.innerHTML = '';
-    let customersToday = db.customers.filter(c => c.week == curWeek && c.day == workingDay).sort((a, b) => { if (a.skipped === b.skipped) return (a.order || 0) - (b.order || 0); return a.skipped ? 1 : -1; });
-    const progressDash = document.getElementById('WEE-progress-dashboard');
-    if(customersToday.length === 0) { progressDash.innerHTML = ''; list.innerHTML = `<div class="empty-state"><span class="empty-icon">🏖️</span><div class="empty-text">Zero Jobs Today</div><div class="empty-sub">Enjoy the day off, or add a job!</div><button class="ADM-save-btn" style="width: 220px; font-size: 14px; height: 50px!important; margin-top: 20px; box-shadow: 0 5px 15px rgba(0,122,255,0.2);" onclick="openAddCustomerModal()">➕ ADD CUSTOMER</button></div>`; return; }
-
-    let completedCount = customersToday.filter(c => c.cleaned || c.skipped).length; let totalCount = customersToday.length; let pct = totalCount === 0 ? 0 : (completedCount / totalCount) * 100; let dailyValue = customersToday.filter(c => c.cleaned).reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
-    progressDash.innerHTML = `<div class="WEE-progress-wrap"><div class="WEE-progress-fill" style="width: ${pct}%;"></div></div><div class="WEE-progress-text">${completedCount} of ${totalCount} Done • £${dailyValue.toFixed(2)} Cleaned Today</div>`;
-
-    customersToday.forEach(c => {
-        const arrData = window.getArrearsData(c);
-        const cleanBadge = c.cleaned ? `<span class="CST-badge badge-clean">✅ CLEANED</span>` : '';
-        const arrearsBadge = arrData.isOwed ? `<span class="CST-badge badge-unpaid">❌ OWES £${arrData.total.toFixed(2)}</span>` : `<span class="CST-badge badge-paid">✅ PAID</span>`;
-        const skipBadge = c.skipped ? `<span class="CST-badge badge-unpaid" style="background: rgba(255, 149, 0, 0.15); color: #cc7700;">⏭️ SKIPPED</span>` : '';
-        
-        const wrap = document.createElement('div'); wrap.className = 'swipe-wrapper'; wrap.dataset.id = c.id;
-        const bg = document.createElement('div'); bg.className = 'swipe-bg'; bg.innerHTML = `<div class="action-left">✅</div><div class="action-right">💰</div>`;
-        const fg = document.createElement('div'); fg.className = `swipe-fg CST-card-item ${c.skipped ? 'skipped-card' : ''}`;
-        
-        fg.innerHTML = `<div style="flex:1;"><strong style="font-size:20px; display:block;">${escapeHTML(c.name)}</strong><small style="color:var(--accent); font-weight:800; display:block;">${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}</small><div class="CST-card-badges">${cleanBadge} ${arrearsBadge} ${skipBadge}</div></div><div style="display:flex; align-items:center; gap: 8px;"><span class="price-text" style="font-weight:950; font-size:22px;">£${(parseFloat(c.price)||0).toFixed(2)}</span><button class="quick-action-btn" onclick="cmdQuickRoute('${c.id}', event)">📍</button><button class="quick-action-btn" onclick="cmdQuickCall('${c.phone}', event)">📞</button><div class="drag-handle">≡</div></div>`;
-        
-        wrap.appendChild(bg); wrap.appendChild(fg); list.appendChild(wrap); attachSwipeGestures(wrap, fg, c.id); attachDragDrop(wrap, list);
-    });
-};
-
 const generateHistoryHtml = (id, phone) => { 
     const history = db.history.filter(h => h.custId === id).slice(-3).reverse();
     if (history.length === 0) return `<div class="empty-state" style="padding: 10px;"><div class="empty-text" style="font-size:14px;">No Payment History</div></div>`;
@@ -612,11 +625,15 @@ window.showJobBriefing = (id) => {
             <button class="CMD-action-btn clean" onclick="cmdToggleClean('${c.id}')"><span style="font-size:24px;">🧼</span> <br>${c.cleaned ? 'UNDO CLEAN' : 'MARK CLEAN'}</button>
             <button class="CMD-action-btn route" onclick="window.open('${navUrl}', '_blank')"><span style="font-size:24px;">📍</span> <br>NAVIGATE</button>
             <button class="CMD-action-btn call" onclick="window.location.href='tel:${escapeHTML(c.phone)}'"><span style="font-size:24px;">📞</span> <br>CALL</button>
+            
             <button class="CMD-action-btn skip" onclick="cmdToggleSkip('${c.id}')"><span style="font-size:24px;">⏭️</span> <br>${c.skipped ? 'UNSKIP' : 'SKIP JOB'}</button>
             <button class="CMD-action-btn" style="background:rgba(0,0,0,0.05);" onclick="triggerPhotoUpload('${c.id}')"><span style="font-size:24px;">📷</span> <br>LOG EVIDENCE</button>
+            <button class="CMD-action-btn invoice" onclick="cmdGenerateInvoice('${c.id}')"><span style="font-size:24px;">📄</span> <br>INVOICE</button>
+
             <button class="CMD-action-btn whatsapp" onclick="cmdWhatsApp('${c.id}')"><span style="font-size:24px;">💬</span> <br>WA REC</button>
             <button class="CMD-action-btn sms" onclick="cmdSMS('${c.id}')"><span style="font-size:24px;">📱</span> <br>SMS REC</button>
-            <button class="CMD-action-btn invoice" onclick="cmdGenerateInvoice('${c.id}')"><span style="font-size:24px;">📄</span> <br>INVOICE</button>
+            
+            <button class="CMD-action-btn ai-btn ai-glow-btn" onclick="triggerAI('reply', '${c.id}')"><span style="font-size:24px;">✨</span> <br>SMART REPLY</button>
         </div>
         ${generatePhotoHtml(c)}
         <h3 class="CMD-history-hdr">Rolling History (Tap 🧾 for receipt)</h3><div class="CMD-history-box">${generateHistoryHtml(c.id, c.phone)}</div>
