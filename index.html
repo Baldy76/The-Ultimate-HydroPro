@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v2.4</title>
+    <title>Ultimate Hydro Pro v2.5</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=24">
+    <link rel="stylesheet" href="styles.css?v=25">
 </head>
 <body class="light-mode">
 
@@ -112,31 +112,36 @@
         </section>
 
         <section id="finances-root" class="tab-content" data-title="Finances">
-            <div id="FIN-dashboard"></div>
-            <div id="FIN-split-dashboard"></div>
-            <div class="ADM-card" style="padding: 25px 15px; margin-top: 20px;">
+            
+            <div id="FIN-black-card" class="fin-black-card"></div>
+            
+            <div id="FIN-bento-box" class="fin-bento-grid"></div>
+
+            <div class="ADM-card" style="padding: 25px 15px; margin-top: 10px;">
                 <h3 class="ADM-hdr" style="margin-bottom: 20px;">Revenue Pipeline</h3>
-                <div style="height: 300px; position: relative;">
+                <div style="height: 250px; position: relative;">
                     <canvas id="financeChartCanvas"></canvas>
                 </div>
             </div>
-            <div class="ADM-card">
-                <h3 class="ADM-hdr">Log Expense</h3>
-                <div class="ADM-row"><span>🛒</span><input type="text" id="fExpDesc" placeholder="Description..."></div>
-                <div class="ADM-row">
-                    <span>🏷️</span>
-                    <select id="fExpCat">
-                        <option value="Fuel">⛽ Fuel</option>
-                        <option value="Equipment">🧽 Equipment</option>
-                        <option value="Food">🍔 Food</option>
-                        <option value="Marketing">📣 Marketing</option>
-                        <option value="Other">🏢 Other</option>
-                    </select>
-                </div>
-                <div class="ADM-row"><span>💸</span><input type="number" id="fExpAmt" placeholder="Amount £"></div>
-                <button class="ADM-save-btn" onclick="addFinanceExpense()">ADD TRANSACTION</button>
+            
+            <h3 class="ADM-hdr" style="text-align: left; padding-left: 25px; margin-bottom: 10px;">Log New Expense</h3>
+            
+            <div class="fin-expense-pill">
+                <select id="fExpCat" class="fin-pill-select">
+                    <option value="Fuel">⛽</option>
+                    <option value="Equipment">🧽</option>
+                    <option value="Food">🍔</option>
+                    <option value="Marketing">📣</option>
+                    <option value="Other">🏢</option>
+                </select>
+                <input type="text" id="fExpDesc" class="fin-pill-desc" placeholder="What did you buy?">
+                <input type="number" id="fExpAmt" class="fin-pill-amt" placeholder="£0.00">
+                <button class="fin-pill-btn" onclick="addFinanceExpense()">↑</button>
             </div>
-            <div id="FIN-ledger"></div>
+            
+            <h3 class="ADM-hdr" style="text-align: left; padding-left: 25px; margin-top: 30px; margin-bottom: 15px;">Recent Transactions</h3>
+            <div id="FIN-ledger-list"></div>
+
         </section>
 
         <section id="admin-root" class="tab-content" data-title="Settings">
@@ -160,7 +165,6 @@
             </div>
             
             <div class="ADM-util-vault">
-                
                 <h3 class="ADM-hdr" style="text-align: left; margin: 0 0 10px;">Accounting Sync</h3>
                 <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0; margin-bottom: 20px;">
                     <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#2ca01c; box-shadow:0 5px 15px rgba(44,160,28,0.2);" onclick="exportToQuickBooks()">QuickBooks</button>
@@ -176,7 +180,7 @@
                 </div>
                 <button class="ADM-util-btn green" onclick="cmdCycleMonth()">🚀 START NEW MONTH</button>
                 <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v2.4</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v2.5</footer>
             </div>
         </section>
 
@@ -203,21 +207,15 @@
             <div class="ADM-row"><span>💰</span><input type="number" id="cPrice" placeholder="Price £"></div>
             <div class="ADM-row">
                 <span>🔄</span>
-                <select id="cFreq">
-                    <option value="4">4 Weekly</option><option value="8">8 Weekly</option><option value="12">12 Weekly</option>
-                </select>
+                <select id="cFreq"><option value="4">4 Weekly</option><option value="8">8 Weekly</option><option value="12">12 Weekly</option></select>
             </div>
             <div class="ADM-row">
                 <span>📅</span>
-                <select id="cWeek">
-                    <option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option><option value="4">Week 4</option><option value="5">Week 5</option>
-                </select>
+                <select id="cWeek"><option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option><option value="4">Week 4</option><option value="5">Week 5</option></select>
             </div>
             <div class="ADM-row">
                 <span>📆</span>
-                <select id="cDay">
-                    <option value="Mon">Monday</option><option value="Tue">Tuesday</option><option value="Wed">Wednesday</option><option value="Thu">Thursday</option><option value="Fri">Friday</option><option value="Sat">Saturday</option><option value="Sun">Sunday</option>
-                </select>
+                <select id="cDay"><option value="Mon">Monday</option><option value="Tue">Tuesday</option><option value="Wed">Wednesday</option><option value="Thu">Thursday</option><option value="Fri">Friday</option><option value="Sat">Saturday</option><option value="Sun">Sunday</option></select>
             </div>
             <div class="ADM-row" style="border-bottom:none; height: auto!important; align-items: flex-start; padding-top: 15px;">
                 <span style="margin-top: 2px;">📝</span>
@@ -292,6 +290,6 @@
 
     <div id="print-area"></div>
 
-    <script src="app.js?v=24" defer></script>
+    <script src="app.js?v=25" defer></script>
 </body>
 </html>
