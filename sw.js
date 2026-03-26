@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ultimate-hydro-v2-4';
+const CACHE_NAME = 'ultimate-hydro-v2-5';
 const ASSETS = [
     './index.html',
     './styles.css',
@@ -20,6 +20,7 @@ self.addEventListener('activate', event => {
             return Promise.all(
                 cacheNames.map(cache => {
                     if (cache !== CACHE_NAME) {
+                        console.log('Clearing old cache:', cache);
                         return caches.delete(cache);
                     }
                 })
