@@ -79,9 +79,9 @@ body.dark-mode #BOTTOM-NAV { background: rgba(0, 0, 0, 0.85); border-top: 1px so
 .CST-search-vault { padding: 0 25px 15px; width: 100%; max-width: 400px; margin: 0 auto; }
 #mainSearch { width: 100%; height: 60px !important; border-radius: 20px; border: 3px solid var(--accent); background: var(--card); padding: 0 20px; font-size: 20px; font-weight: 700; color: var(--text); outline: none; font-family: 'Plus Jakarta Sans', sans-serif; }
 
-/* ✨ NEW: Filter Button Styles ✨ */
-.CST-filter-btn { background: transparent; border: 2px solid var(--ios-grey); color: var(--text); border-radius: 15px; padding: 6px 14px; font-size: 12px; font-weight: 800; opacity: 0.6; transition: 0.2s; }
-.CST-filter-btn.active { background: rgba(255, 69, 58, 0.15); color: var(--danger); border-color: transparent; opacity: 1; }
+/* ✨ UI UPGRADE: Larger, centered, pill-shaped filter button ✨ */
+.CST-filter-btn { background: var(--card); border: 2px solid var(--ios-grey); color: var(--text); border-radius: 20px; padding: 10px 24px; font-size: 14px; font-weight: 800; opacity: 0.7; transition: all 0.2s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.03); display: block; margin: 0 auto; }
+.CST-filter-btn.active { background: rgba(255, 69, 58, 0.15); color: var(--danger); border-color: transparent; opacity: 1; box-shadow: 0 5px 15px rgba(255, 69, 58, 0.2); transform: scale(1.02); }
 
 .CST-card-item { background: var(--card); margin: 0 25px 12px; padding: 20px; border-radius: 30px; display: flex; flex-direction: column; justify-content: center; gap: 10px; border: 1px solid rgba(0,0,0,0.02); min-height: 110px; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.04) !important; transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .CST-card-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
