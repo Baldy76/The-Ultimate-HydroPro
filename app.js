@@ -15,6 +15,9 @@ let confirmCallback = null;
 let showArrearsOnly = false;
 let editingCustomerId = null;
 
+// ✨ NEW: Track payment method selected in modal
+let currentPayMethod = 'Cash'; 
+
 const idb = {
     db: null,
     init: () => new Promise((resolve, reject) => {
@@ -68,11 +71,11 @@ if ('serviceWorker' in navigator) {
 const escapeHTML = (str) => {
     if (!str) return '';
     return String(str)
-        .replace(/&/g, "&")
-        .replace(/</g, "<")
-        .replace(/>/g, ">")
-        .replace(/"/g, '"')
-        .replace(/'/g, "'"); 
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;"); 
 };
 
 window.getArrearsData = (c) => {
@@ -132,7 +135,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!savedData) {
             const legacyData = localStorage.getItem(DB_KEY);
             if (legacyData) {
-                console.log("Legacy Data found. Migrating to IndexedDB...");
                 savedData = JSON.parse(legacyData);
                 await idb.set('master_db', savedData);
             }
@@ -284,7 +286,6 @@ window.saveCustomer = () => {
             showToast(`${name} updated`, "success");
         }
     } else {
-        // ✨ Added c.skipped state hook ✨
         db.customers.push({ 
             id: Date.now().toString(), 
             order: Date.now(), 
@@ -352,7 +353,7 @@ window.cmdCycleMonth = () => {
                 if (!c.pastArrears) c.pastArrears = []; 
                 c.pastArrears.push({ month: cycleMonth, amt: price - paid }); 
             } 
-            c.cleaned = false; c.skipped = false; // ✨ Reset skip state! ✨
+            c.cleaned = false; c.skipped = false; 
             c.paidThisMonth = 0; 
         }); 
         db.expenses = []; saveData(); location.reload();
@@ -513,7 +514,6 @@ const attachDragDrop = (wrap, listContainer) => {
     });
 };
 
-// ✨ NEW: Quick Action Handlers ✨
 window.cmdQuickCall = (phone, e) => {
     e.stopPropagation();
     triggerHaptic();
@@ -526,10 +526,9 @@ window.cmdQuickRoute = (id, e) => {
     triggerHaptic();
     const c = db.customers.find(x => x.id === id); if(!c) return;
     const mapQuery = encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`);
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=$${mapQuery}`, '_blank');
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${mapQuery}`, '_blank');
 };
 
-// ✨ NEW: Skip Toggle Logic ✨
 window.cmdToggleSkip = (id) => {
     triggerHaptic();
     const c = db.customers.find(x => x.id === id);
@@ -539,10 +538,28 @@ window.cmdToggleSkip = (id) => {
     showToast(c.skipped ? "Job Skipped ⏭️" : "Skip Removed", "normal");
 };
 
+// ✨ NEW: Instant SMS/WA Receipts ✨
+window.cmdReceiptWA = (phone, amt, date) => {
+    triggerHaptic();
+    if(!phone || phone === 'undefined') return showToast("No phone number saved.", "error");
+    let p = phone.replace(/\D/g, ''); if(p.startsWith('0')) p = '44' + p.substring(1);
+    let msg = `Receipt from Hydro Pro 💧\n\nReceived: £${parseFloat(amt).toFixed(2)}\nDate: ${date}\n\nThank you for your business!`;
+    window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`, '_blank');
+};
+
+window.cmdReceiptSMS = (phone, amt, date) => {
+    triggerHaptic();
+    if(!phone || phone === 'undefined') return showToast("No phone number saved.", "error");
+    let p = phone.replace(/\D/g, ''); 
+    let msg = `Receipt from Hydro Pro 💧\n\nReceived: £${parseFloat(amt).toFixed(2)}\nDate: ${date}\n\nThank you for your business!`;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const separator = isIOS ? '&' : '?';
+    window.open(`sms:${p}${separator}body=${encodeURIComponent(msg)}`, '_blank');
+};
+
 window.renderWeek = () => { 
     const list = document.getElementById('WEE-list-container'); if(!list) return; list.innerHTML = '';
     
-    // ✨ NEW: Sort Active jobs first, Skipped jobs forced to the bottom ✨
     let customersToday = db.customers
         .filter(c => c.week == curWeek && c.day == workingDay)
         .sort((a, b) => {
@@ -562,7 +579,6 @@ window.renderWeek = () => {
         return;
     }
 
-    // ✨ NEW: The Daily Motivation Engine (Progress Calculation) ✨
     let completedCount = customersToday.filter(c => c.cleaned || c.skipped).length;
     let totalCount = customersToday.length;
     let pct = totalCount === 0 ? 0 : (completedCount / totalCount) * 100;
@@ -590,7 +606,6 @@ window.renderWeek = () => {
         const fg = document.createElement('div');
         fg.className = `swipe-fg CST-card-item ${c.skipped ? 'skipped-card' : ''}`;
         
-        // ✨ NEW: Injected the Quick Action Buttons next to the price ✨
         fg.innerHTML = `
             <div style="flex:1;">
                 <strong style="font-size:20px; display:block;">${escapeHTML(c.name)}</strong>
@@ -615,7 +630,6 @@ window.renderWeek = () => {
 
 window.routeMyDay = () => {
     triggerHaptic();
-    // Exclude skipped customers from routing!
     let todaysJobs = db.customers
         .filter(c => c.week == curWeek && c.day == workingDay && !c.skipped)
         .sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -629,6 +643,66 @@ window.routeMyDay = () => {
     let url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
     if(waypoints) url += `&waypoints=${waypoints}`;
     window.open(url, '_blank');
+};
+
+// ✨ NEW: The "Tomorrow" Pre-Route Engine ✨
+window.openTomorrowModal = () => {
+    triggerHaptic();
+    
+    // Calculate Tomorrow's Day and Week
+    let nextIdx = (daysOfWeek.indexOf(workingDay) + 1) % 7;
+    let nextDay = daysOfWeek[nextIdx];
+    let nextWeek = curWeek;
+    
+    if (nextDay === 'Mon' && workingDay === 'Sun') {
+        nextWeek = curWeek < 5 ? curWeek + 1 : 1;
+    }
+    
+    let tomorrowJobs = db.customers.filter(c => c.week == nextWeek && c.day == nextDay && !c.skipped).sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    const list = document.getElementById('tomorrow-list');
+    document.getElementById('tomorrow-title-sub').innerText = `Week ${nextWeek} • ${nextDay}`;
+    
+    if(tomorrowJobs.length === 0) {
+        list.innerHTML = `<div class="empty-state" style="padding: 20px;"><div class="empty-text" style="font-size:16px;">No jobs scheduled for tomorrow.</div></div>`;
+    } else {
+        list.innerHTML = tomorrowJobs.map(c => `
+            <div class="CMD-detail-row" style="flex-direction:column; align-items:flex-start; gap:10px; padding:15px; background:var(--ios-grey); border-radius:20px; margin-bottom:10px;">
+                <div>
+                    <strong style="font-size:18px;">${escapeHTML(c.name)}</strong><br>
+                    <small style="opacity: 0.6; font-weight: 800;">${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}</small>
+                </div>
+                <div style="display:flex; gap:10px; width:100%;">
+                    <button class="ADM-save-btn" style="height:40px!important; margin:0; font-size:12px; background:rgba(52, 199, 89, 0.15); color:var(--success); box-shadow:none;" onclick="cmdPreRouteWA('${c.id}')">💬 WA REMINDER</button>
+                    <button class="ADM-save-btn" style="height:40px!important; margin:0; font-size:12px; background:rgba(0, 122, 255, 0.15); color:var(--accent); box-shadow:none;" onclick="cmdPreRouteSMS('${c.id}')">📱 SMS REMINDER</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    document.getElementById('tomorrowModal').classList.remove('hidden');
+};
+
+window.closeTomorrowModal = () => {
+    document.getElementById('tomorrowModal').classList.add('hidden');
+};
+
+window.cmdPreRouteWA = (id) => {
+    triggerHaptic();
+    const c = db.customers.find(x => x.id === id); if(!c.phone) return showToast("No phone number saved.", "error");
+    let phone = c.phone.replace(/\D/g, ''); if(phone.startsWith('0')) phone = '44' + phone.substring(1); 
+    let msg = `Hi ${c.name}, Hydro Pro here! We are due to clean your windows tomorrow. Please remember to leave the side gate unlocked. See you then! 💧`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+};
+
+window.cmdPreRouteSMS = (id) => {
+    triggerHaptic();
+    const c = db.customers.find(x => x.id === id); if(!c.phone) return showToast("No phone number saved.", "error");
+    let phone = c.phone.replace(/\D/g, '');
+    let msg = `Hi ${c.name}, Hydro Pro here! We are due to clean your windows tomorrow. Please remember to leave the side gate unlocked. See you then! 💧`;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const separator = isIOS ? '&' : '?';
+    window.open(`sms:${phone}${separator}body=${encodeURIComponent(msg)}`, '_blank');
 };
 
 window.cmdWhatsApp = (id) => {
@@ -652,10 +726,22 @@ window.cmdSMS = (id) => {
     window.open(`sms:${phone}${separator}body=${encodeURIComponent(msg)}`, '_blank');
 };
 
-const generateHistoryHtml = (id) => { 
+// ✨ NEW: Interactive Rolling History rendering ✨
+const generateHistoryHtml = (id, phone) => { 
     const history = db.history.filter(h => h.custId === id).slice(-3).reverse();
     if (history.length === 0) return `<div class="empty-state" style="padding: 10px;"><div class="empty-text" style="font-size:14px;">No Payment History</div></div>`;
-    return history.map(h => `<div class="CMD-history-row"><span>${escapeHTML(h.date)}</span><span>£${parseFloat(h.amt).toFixed(2)}</span></div>`).join('');
+    
+    return history.map(h => `
+        <div class="CMD-history-row" style="align-items:center;">
+            <div>
+                <span>${escapeHTML(h.date)}</span> 
+                <span style="opacity:0.5; font-size:10px; margin-left:5px;">${h.method === 'Bank' ? '🏦' : '💵'}</span>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <span style="color:var(--success);">£${parseFloat(h.amt).toFixed(2)}</span>
+                <button class="quick-action-btn" style="width:28px; height:28px; font-size:12px; margin-left:0;" onclick="cmdReceiptWA('${escapeHTML(phone)}', '${h.amt}', '${escapeHTML(h.date)}')">🧾</button>
+            </div>
+        </div>`).join('');
 };
 
 const generateArrearsHtml = (arrData, cId, context) => { 
@@ -694,9 +780,8 @@ window.showJobBriefing = (id) => {
             <button class="CMD-action-btn call" onclick="window.location.href='tel:${escapeHTML(c.phone)}'"><span style="font-size:24px;">📞</span> <br>CALL</button>
             <button class="CMD-action-btn skip" onclick="cmdToggleSkip('${c.id}')"><span style="font-size:24px;">⏭️</span> <br>${c.skipped ? 'UNSKIP' : 'SKIP JOB'}</button>
             <button class="CMD-action-btn whatsapp" onclick="cmdWhatsApp('${c.id}')"><span style="font-size:24px;">💬</span> <br>WA REC</button>
-            <button class="CMD-action-btn sms" onclick="cmdSMS('${c.id}')"><span style="font-size:24px;">📱</span> <br>SMS REC</button>
         </div>
-        <h3 class="CMD-history-hdr">Rolling History</h3><div class="CMD-history-box">${generateHistoryHtml(c.id)}</div>
+        <h3 class="CMD-history-hdr">Rolling History (Tap 🧾 for receipt)</h3><div class="CMD-history-box">${generateHistoryHtml(c.id, c.phone)}</div>
     `;
     document.getElementById('briefingModal').classList.remove('hidden');
 };
@@ -723,7 +808,7 @@ window.showCustomerBriefing = (id) => {
         </div>
         ${notesHtml}
         ${generateArrearsHtml(arrData, c.id, 'cust')}
-        <h3 class="CMD-history-hdr">Rolling History</h3><div class="CMD-history-box">${generateHistoryHtml(c.id)}</div>
+        <h3 class="CMD-history-hdr">Rolling History (Tap 🧾 for receipt)</h3><div class="CMD-history-box">${generateHistoryHtml(c.id, c.phone)}</div>
     `;
     document.getElementById('briefingModal').classList.remove('hidden');
 };
@@ -734,8 +819,10 @@ window.cmdToggleClean = (id) => {
     triggerHaptic();
     const c = db.customers.find(x => x.id === id); 
     c.cleaned = !c.cleaned; 
-    if(c.cleaned) c.skipped = false; // Cannot be both clean and skipped
-    window.saveData(); window.renderAllSafe(); window.showJobBriefing(id); 
+    if(c.cleaned) c.skipped = false; 
+    window.saveData(); window.renderAllSafe(); 
+    
+    document.getElementById('briefingModal').classList.add('hidden');
     showToast(c.cleaned ? "Marked as Cleaned ✅" : "Clean Undone", "success");
 };
 
@@ -761,6 +848,9 @@ window.cmdSettlePaid = (id, context) => {
 
     document.getElementById('pay-full-btn').innerText = `PAY IN FULL (£${arrData.total.toFixed(2)})`;
     document.getElementById('pay-custom-amt').value = '';
+    
+    // Reset payment toggle to Cash
+    setPayMethod('Cash');
 
     document.getElementById('briefingModal').classList.add('hidden');
     document.getElementById('paymentModal').classList.remove('hidden');
@@ -769,6 +859,14 @@ window.cmdSettlePaid = (id, context) => {
 window.closePaymentModal = () => {
     document.getElementById('paymentModal').classList.add('hidden');
     currentPayId = null;
+};
+
+// ✨ NEW: Track Payment Method in Toggle
+window.setPayMethod = (method) => {
+    triggerHaptic();
+    currentPayMethod = method;
+    document.getElementById('btnPayCash').classList.toggle('active', method === 'Cash');
+    document.getElementById('btnPayBank').classList.toggle('active', method === 'Bank');
 };
 
 window.processPayment = (type) => {
@@ -798,13 +896,20 @@ window.processPayment = (type) => {
         c.pastArrears = c.pastArrears.filter(a => a.amt > 0.01);
     }
     
-    if(!db.history) db.history = []; db.history.push({ custId: currentPayId, amt: amtPaid, date: new Date().toLocaleDateString('en-GB') }); 
+    // ✨ Saved Payment Method to History ✨
+    if(!db.history) db.history = []; 
+    db.history.push({ 
+        custId: currentPayId, 
+        amt: amtPaid, 
+        date: new Date().toLocaleDateString('en-GB'),
+        method: currentPayMethod
+    }); 
     
     window.saveData(); 
     window.renderAllSafe(); 
     closePaymentModal();
     
-    showToast(`Payment of £${amtPaid.toFixed(2)} secured 💰`, "success");
+    showToast(`£${amtPaid.toFixed(2)} logged to ${currentPayMethod} 💰`, "success");
     
     if (currentPayContext === 'job') window.showJobBriefing(currentPayId); else window.showCustomerBriefing(currentPayId);
 };
@@ -835,7 +940,10 @@ const arc3DPlugin = {
 };
 
 window.renderFinances = () => {
-    const dash = document.getElementById('FIN-dashboard'); const ledger = document.getElementById('FIN-ledger'); if(!dash || !ledger) return;
+    const dash = document.getElementById('FIN-dashboard'); 
+    const splitDash = document.getElementById('FIN-split-dashboard');
+    const ledger = document.getElementById('FIN-ledger'); 
+    if(!dash || !ledger || !splitDash) return;
     
     let income = 0, spend = 0, expected = 0, totalArrears = 0, forecasted = 0; 
     let arrearsListHtml = '';
@@ -850,6 +958,17 @@ window.renderFinances = () => {
         if(arrData.isOwed) { 
             totalArrears += arrData.total; 
             arrearsListHtml += `<div class="CMD-detail-row"><span>${escapeHTML(c.name)} <small style="opacity:0.7;">${escapeHTML(arrData.monthsString)}</small></span><span>£${arrData.total.toFixed(2)}</span></div>`; 
+        }
+    });
+
+    // ✨ Calculate Cash vs Bank for the current month!
+    let cashTotal = 0; let bankTotal = 0;
+    let currentMonthStr = new Date().toLocaleDateString('en-GB').substring(3); // e.g. '03/2026'
+    
+    db.history.forEach(h => {
+        if (h.date && h.date.includes(currentMonthStr)) {
+            if (h.method === 'Bank') bankTotal += parseFloat(h.amt);
+            else cashTotal += parseFloat(h.amt); // Default old payments to Cash
         }
     });
 
@@ -883,6 +1002,20 @@ window.renderFinances = () => {
         </div>`;
     
     dash.innerHTML = htmlBuilder;
+
+    // ✨ The New Cash/Bank Sub-Split ✨
+    splitDash.innerHTML = `
+        <div class="FIN-bubble-row" style="margin-top:-10px;">
+            <div class="FIN-bubble" style="padding:10px;">
+                <div class="bubble-icon" style="width:30px;height:30px;font-size:16px;">💵</div>
+                <div class="bubble-info"><small>CASH IN HAND</small><strong style="font-size:14px;">£${cashTotal.toFixed(2)}</strong></div>
+            </div>
+            <div class="FIN-bubble" style="padding:10px;">
+                <div class="bubble-icon" style="width:30px;height:30px;font-size:16px;">🏦</div>
+                <div class="bubble-info"><small>BANKED</small><strong style="font-size:14px;">£${bankTotal.toFixed(2)}</strong></div>
+            </div>
+        </div>
+    `;
     
     const ctx = document.getElementById('financeChartCanvas');
     if (ctx && typeof Chart !== 'undefined') {
