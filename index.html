@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v2.9</title>
+    <title>Ultimate Hydro Pro v3.0</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=29">
+    <link rel="stylesheet" href="styles.css?v=30">
 </head>
 <body class="light-mode">
 
@@ -64,6 +64,10 @@
                     <button class="ADM-util-btn grey" style="flex: 1; width: auto!important; height: 60px!important; border-radius: 20px; font-size: 14px;" onclick="openExpenseModal()">🛒 Log Exp</button>
                 </div>
             </div>
+
+            <button class="ai-floating-btn ai-glow-btn" onclick="triggerAI('voice')">
+                <span style="font-size: 18px;">🎤</span> Tap to Speak to Hydro AI
+            </button>
         </section>
         
         <section id="week-view-root" class="tab-content" data-title="Route">
@@ -130,6 +134,13 @@
         </section>
 
         <section id="admin-root" class="tab-content" data-title="Settings">
+
+            <div class="ADM-card" style="border: 2px solid #8a2be2;">
+                <h3 class="ADM-hdr" style="color: #8a2be2; font-weight: 950;">🧠 The AI Vault</h3>
+                <div class="ADM-row"><span>🔑</span><input type="password" id="sAIKey" placeholder="Paste API Key here..."></div>
+                <button class="ADM-save-btn ai-glow-btn" style="height: 50px!important; font-size: 14px;" onclick="saveSettingsAIKey()">SECURE AI KEY ✨</button>
+            </div>
+
             <div class="ADM-card">
                 <h3 class="ADM-hdr">App Preferences</h3>
                 <div style="border-bottom: 2px solid var(--ios-grey); padding-bottom: 20px; margin-bottom: 15px;">
@@ -192,7 +203,7 @@
                 </div>
                 <button class="ADM-util-btn green" onclick="cmdCycleMonth()">🚀 START NEW MONTH</button>
                 <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v2.9</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v3.0 AI</footer>
             </div>
         </section>
 
@@ -208,11 +219,34 @@
 
     <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden onchange="handlePhotoUpload(event)">
 
+    <div id="aiTeaserModal" class="modal-overlay hidden" onclick="closeAITeaserModal()">
+        <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
+            <div class="modal-drag-pill"></div>
+            <button class="close-x-btn" onclick="closeAITeaserModal()">✕</button>
+            <div class="CMD-header" style="text-align:center; border:none; padding-bottom: 0;">
+                <div style="font-size: 50px; margin-bottom: 5px;">✨</div>
+                <h2 style="font-size: 26px; padding:0;">Wake up Hydro AI</h2>
+            </div>
+            <p style="text-align: center; font-size: 15px; font-weight: 600; opacity: 0.7; margin-bottom: 25px;">
+                Auto-scan receipts, draft smart replies, and use wet-hands voice commands.
+            </p>
+            <div style="background: rgba(138, 43, 226, 0.1); padding: 15px; border-radius: 20px; border: 1px solid rgba(138, 43, 226, 0.3); margin-bottom: 20px;">
+                <div style="font-size: 12px; font-weight: 900; color: #8a2be2; text-transform: uppercase; margin-bottom: 5px;">API Key Required</div>
+                <input type="password" id="aiKeyInputModal" placeholder="sk-proj-..." style="width: 100%; height: 40px; border-radius: 10px; border: none; padding: 0 10px; font-size: 14px; font-weight: 700; outline: none; font-family: 'Plus Jakarta Sans', sans-serif;">
+            </div>
+            <button class="ADM-save-btn ai-glow-btn" style="margin-top:0;" onclick="saveModalAIKey()">ACTIVATE AI ENGINE</button>
+        </div>
+    </div>
+
+
     <div id="expenseModal" class="modal-overlay hidden" onclick="closeExpenseModal()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
             <button class="close-x-btn" onclick="closeExpenseModal()">✕</button>
             <div class="CMD-header"><h2>Log Expense</h2></div>
+            
+            <button class="ADM-save-btn ai-glow-btn" style="margin-top: 0; margin-bottom: 20px; font-size: 14px; height: 60px!important;" onclick="triggerAI('receipt')">📸 Auto-Scan Receipt with AI ✨</button>
+
             <div class="ADM-row">
                 <span>🏷️</span>
                 <select id="mExpCat">
@@ -325,6 +359,6 @@
 
     <div id="print-area"></div>
 
-    <script src="app.js?v=29" defer></script>
+    <script src="app.js?v=30" defer></script>
 </body>
 </html>
