@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v1.9</title>
+    <title>Ultimate Hydro Pro v2.0</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,55 +16,87 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=19">
+    <link rel="stylesheet" href="styles.css?v=20">
 </head>
 <body class="light-mode">
 
     <div id="toast-container"></div>
 
     <header id="G-HEADER">
-        <h1 id="dynamic-header-title">Schedule</h1>
+        <h1 id="dynamic-header-title">Dashboard</h1>
     </header>
 
     <main id="G-VIEWPORT">
-        
-        <section id="weeks-root" class="tab-content active" data-title="Schedule">
-            <div class="WEE-selection-grid">
-                <div class="WEE-grid-row">
-                    <button class="WEE-btn week-1" onclick="viewWeek(1)">WEEK 1</button>
-                    <button class="WEE-btn week-2" onclick="viewWeek(2)">WEEK 2</button>
+
+        <section id="home-root" class="tab-content active" data-title="Dashboard">
+            
+            <div style="padding: 0 25px 15px;">
+                <p style="margin:0; opacity:0.5; font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:1px;" id="home-date">LOADING DATE...</p>
+                <h2 style="margin:0; font-size:32px; font-weight:950; letter-spacing:-1px;">Good Morning.</h2>
+            </div>
+
+            <div id="home-weather-pill" class="ADM-card" style="margin: 0 20px 20px; padding: 15px 20px; display:flex; align-items:center; gap: 15px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.03)!important;" onclick="openTab('weather-root', 'nav-wth-btn')">
+                <span style="font-size: 30px;" id="hw-icon">🌤️</span>
+                <div style="flex:1;">
+                    <strong style="font-size: 18px; display:block;" id="hw-temp">--°C</strong>
+                    <small style="opacity:0.6; font-weight:800;" id="hw-desc">Syncing radar...</small>
                 </div>
-                <div class="WEE-grid-row">
-                    <button class="WEE-btn week-3" onclick="viewWeek(3)">WEEK 3</button>
-                    <button class="WEE-btn week-4" onclick="viewWeek(4)">WEEK 4</button>
+                <div style="opacity:0.3; font-size:20px;">›</div>
+            </div>
+
+            <div class="FIN-hero-iron" style="border-color: var(--success); padding: 25px; margin-bottom: 20px;">
+                <small style="opacity:0.5; font-weight:900; text-transform:uppercase; letter-spacing:1px;">Today's Route Pipeline</small>
+                <div id="home-jobs-value" style="font-size: 45px; font-weight: 950; color: var(--success); line-height: 1.1; margin-top: 5px;">£0.00</div>
+                <div id="home-jobs-count" style="font-weight: 800; opacity: 0.7; margin-bottom: 20px; font-size: 15px;">0 Jobs Scheduled</div>
+                <button class="ADM-save-btn" style="margin-top: 0; height: 60px!important; box-shadow: 0 10px 25px rgba(52, 199, 89, 0.25); background: var(--success);" onclick="openTab('week-view-root', 'nav-route-btn')">🚀 START ROUTE</button>
+            </div>
+
+            <div class="FIN-bubble-row" style="margin-bottom: 20px;">
+                <div class="FIN-bubble" style="flex-direction:column; align-items:flex-start;">
+                    <small>TOTAL ARREARS</small>
+                    <strong style="color:var(--danger); font-size:22px;" id="home-arrears">£0.00</strong>
                 </div>
-                <div class="WEE-grid-row">
-                    <button class="WEE-btn week-5 full" onclick="viewWeek(5)">WEEK 5</button>
+                <div class="FIN-bubble" style="flex-direction:column; align-items:flex-start;">
+                    <small>CASH IN HAND</small>
+                    <strong style="color:var(--success); font-size:22px;" id="home-cash">£0.00</strong>
+                </div>
+            </div>
+
+            <div style="padding: 0 20px 30px;">
+                <h3 class="ADM-hdr" style="text-align: left; margin-bottom: 10px; padding-left: 5px;">Quick Actions</h3>
+                <div style="display:flex; gap:15px;">
+                    <button class="ADM-util-btn blue" style="height: 60px!important; border-radius: 20px; font-size: 14px;" onclick="openAddCustomerModal()">➕ Add Cust</button>
+                    <button class="ADM-util-btn grey" style="height: 60px!important; border-radius: 20px; font-size: 14px;" onclick="openTab('finances-root', 'nav-fin-btn')">🛒 Log Exp</button>
                 </div>
             </div>
         </section>
-
+        
         <section id="week-view-root" class="tab-content" data-title="Route">
-            <div class="WEE-sub-nav">
-                <button onclick="openTab('weeks-root')">⬅️ BACK TO WEEKS</button>
+            
+            <div class="WEE-day-selector" style="padding-top: 5px;">
+                <button class="WEE-day-btn active" id="day-Mon" onclick="setWorkingDay('Mon', this)">M</button>
+                <button class="WEE-day-btn" id="day-Tue" onclick="setWorkingDay('Tue', this)">T</button>
+                <button class="WEE-day-btn" id="day-Wed" onclick="setWorkingDay('Wed', this)">W</button>
+                <button class="WEE-day-btn" id="day-Thu" onclick="setWorkingDay('Thu', this)">T</button>
+                <button class="WEE-day-btn" id="day-Fri" onclick="setWorkingDay('Fri', this)">F</button>
+                <button class="WEE-day-btn" id="day-Sat" onclick="setWorkingDay('Sat', this)">S</button>
+                <button class="WEE-day-btn" id="day-Sun" onclick="setWorkingDay('Sun', this)">S</button>
+            </div>
+
+            <div class="theme-segmented-control" style="margin: 0 25px 20px; border-radius: 20px; height: 45px;">
+                <button id="wk-btn-1" class="segment active" onclick="setWorkingWeek(1)">W1</button>
+                <button id="wk-btn-2" class="segment" onclick="setWorkingWeek(2)">W2</button>
+                <button id="wk-btn-3" class="segment" onclick="setWorkingWeek(3)">W3</button>
+                <button id="wk-btn-4" class="segment" onclick="setWorkingWeek(4)">W4</button>
+                <button id="wk-btn-5" class="segment" onclick="setWorkingWeek(5)">W5</button>
             </div>
             
-            <div class="WEE-day-selector">
-                <button class="WEE-day-btn active" onclick="setWorkingDay('Mon', this)">M</button>
-                <button class="WEE-day-btn" onclick="setWorkingDay('Tue', this)">T</button>
-                <button class="WEE-day-btn" onclick="setWorkingDay('Wed', this)">W</button>
-                <button class="WEE-day-btn" onclick="setWorkingDay('Thu', this)">T</button>
-                <button class="WEE-day-btn" onclick="setWorkingDay('Fri', this)">F</button>
-                <button class="WEE-day-btn" onclick="setWorkingDay('Sat', this)">S</button>
-                <button class="WEE-day-btn" onclick="setWorkingDay('Sun', this)">S</button>
+            <div style="display:flex; gap:10px; margin: 0 20px 10px; padding:0 5px;">
+                <button class="ADM-save-btn" style="margin:0; background: var(--text); color: var(--bg); flex: 2;" onclick="routeMyDay()">📍 ROUTE</button>
+                <button class="ADM-save-btn" style="margin:0; background: transparent; border: 2px solid var(--accent); color: var(--accent); box-shadow: none; flex: 1; font-size:13px;" onclick="openTomorrowModal()">🔮 TMRW</button>
             </div>
-            
-            <button class="ADM-save-btn" style="width: calc(100% - 40px); margin: 0 20px 10px; background: var(--text); color: var(--bg);" onclick="routeMyDay()">📍 ROUTE MY DAY</button>
-            
-            <button class="ADM-save-btn" style="width: calc(100% - 40px); margin: 0 20px 20px; background: transparent; border: 2px solid var(--accent); color: var(--accent); box-shadow: none;" onclick="openTomorrowModal()">🔮 PRE-ROUTE TOMORROW</button>
 
             <div id="WEE-progress-dashboard"></div>
-            
             <div id="WEE-list-container"></div>
         </section>
 
@@ -90,7 +122,6 @@
 
         <section id="finances-root" class="tab-content" data-title="Finances">
             <div id="FIN-dashboard"></div>
-            
             <div id="FIN-split-dashboard"></div>
 
             <div class="ADM-card" style="padding: 25px 15px; margin-top: 20px;">
@@ -116,7 +147,6 @@
                 <div class="ADM-row"><span>💸</span><input type="number" id="fExpAmt" placeholder="Amount £"></div>
                 <button class="ADM-save-btn" onclick="addFinanceExpense()">ADD TRANSACTION</button>
             </div>
-            
             <div id="FIN-ledger"></div>
         </section>
 
@@ -149,35 +179,35 @@
                 </div>
                 <button class="ADM-util-btn green" onclick="cmdCycleMonth()">🚀 START NEW MONTH</button>
                 <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v1.9</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v2.0</footer>
             </div>
         </section>
 
     </main>
 
     <nav id="BOTTOM-NAV">
-        <button class="nav-item active" onclick="openTab('weeks-root', this)"><span class="nav-icon">📅</span><small>Weeks</small></button>
-        <button class="nav-item" onclick="openTab('master-root', this)"><span class="nav-icon">👥</span><small>Custs</small></button>
-        <button class="nav-item" onclick="openTab('weather-root', this)"><span class="nav-icon">🌤️</span><small>Weather</small></button>
-        <button class="nav-item" onclick="openTab('finances-root', this)"><span class="nav-icon">💰</span><small>Finances</small></button>
-        <button class="nav-item" onclick="openTab('admin-root', this)"><span class="nav-icon">⚙️</span><small>Settings</small></button>
+        <button id="nav-route-btn" class="nav-item" onclick="openTab('week-view-root', 'nav-route-btn')"><span class="nav-icon">📍</span><small>Route</small></button>
+        <button id="nav-cust-btn" class="nav-item" onclick="openTab('master-root', 'nav-cust-btn')"><span class="nav-icon">👥</span><small>Custs</small></button>
+        
+        <div class="nav-fab-wrapper">
+            <button id="nav-home-btn" class="home-fab active" onclick="openTab('home-root', 'nav-home-btn')">🏠</button>
+        </div>
+        
+        <button id="nav-fin-btn" class="nav-item" onclick="openTab('finances-root', 'nav-fin-btn')"><span class="nav-icon">💰</span><small>Finance</small></button>
+        <button id="nav-set-btn" class="nav-item" onclick="openTab('admin-root', 'nav-set-btn')"><span class="nav-icon">⚙️</span><small>Settings</small></button>
     </nav>
 
     <div id="addCustomerModal" class="modal-overlay hidden" onclick="closeAddCustomerModal()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
             <button class="close-x-btn" onclick="closeAddCustomerModal()">✕</button>
-            
-            <div class="CMD-header">
-                <h2 id="customerModalTitle">Add Customer</h2>
-            </div>
+            <div class="CMD-header"><h2 id="customerModalTitle">Add Customer</h2></div>
             <div class="ADM-row"><span>👤</span><input type="text" id="cName" placeholder="Full Name"></div>
             <div class="ADM-row"><span>🏠</span><input type="text" id="cHouseNum" placeholder="House No."></div>
             <div class="ADM-row"><span>🛣️</span><input type="text" id="cStreet" placeholder="Street Name"></div>
             <div class="ADM-row"><span>📍</span><input type="text" id="cPostcode" placeholder="Postcode"></div>
             <div class="ADM-row"><span>📞</span><input type="tel" id="cPhone" placeholder="Phone Number"></div>
             <div class="ADM-row"><span>💰</span><input type="number" id="cPrice" placeholder="Price £"></div>
-            
             <div class="ADM-row">
                 <span>📅</span>
                 <select id="cWeek">
@@ -200,17 +230,14 @@
                     <option value="Sun">Sunday</option>
                 </select>
             </div>
-
             <div class="ADM-row" style="border-bottom:none; height: auto!important; align-items: flex-start; padding-top: 15px;">
                 <span style="margin-top: 2px;">📝</span>
                 <textarea id="cNotes" placeholder="Additional Notes (e.g. Beware of dog...)" rows="3"></textarea>
             </div>
-            
             <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
                 <button class="ADM-save-btn" style="margin-top:0; background: var(--ios-grey); color: var(--text); box-shadow: none;" onclick="closeAddCustomerModal()">CANCEL</button>
                 <button id="saveCustomerBtn" class="ADM-save-btn" style="margin-top:0;" onclick="saveCustomer()">SAVE</button>
             </div>
-            
             <button id="deleteCustomerBtn" class="ADM-save-btn hidden" style="margin-top: 15px; background: transparent; border: 3px dashed var(--danger); color: var(--danger); box-shadow: none;" onclick="cmdDeleteCustomer()">🗑️ DELETE CUSTOMER</button>
         </div>
     </div>
@@ -227,21 +254,16 @@
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
             <button class="close-x-btn" onclick="closePaymentModal()">✕</button>
-
             <div class="theme-segmented-control" style="margin-bottom: 20px;">
                 <button id="btnPayCash" class="segment active" onclick="setPayMethod('Cash')">💵 Cash</button>
                 <button id="btnPayBank" class="segment" onclick="setPayMethod('Bank')">🏦 Bank Tx</button>
             </div>
-
             <div class="CMD-header" style="border-bottom: none; text-align: center;">
                 <div class="CMD-header-sub" style="margin-bottom: 5px; color: var(--success);">SECURE CHECKOUT</div>
                 <h2 id="pay-name" style="font-size: 26px;">Customer Name</h2>
             </div>
-
             <div id="pay-arrears-box" class="CMD-alert-danger" style="margin-top: 0; cursor: default; transform: none;"></div>
-
             <button id="pay-full-btn" class="ADM-save-btn" style="background: var(--success); margin-top: 5px; margin-bottom: 25px;" onclick="processPayment('full')">PAY IN FULL</button>
-
             <div class="ADM-card" style="margin: 0; padding: 20px; border-radius: 25px; box-shadow: none!important; border: 2px solid var(--ios-grey);">
                 <div style="font-size: 11px; font-weight: 900; opacity: 0.5; text-transform: uppercase; margin-bottom: 10px; text-align: center;">Or Enter Custom Amount</div>
                 <div class="ADM-row" style="border: none; height: 60px!important; margin-bottom: 15px; justify-content: center;">
@@ -279,6 +301,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=19" defer></script>
+    <script src="app.js?v=20" defer></script>
 </body>
 </html>
