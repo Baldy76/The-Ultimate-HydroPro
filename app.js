@@ -14,7 +14,9 @@ let currentPayTotal = 0;
 let confirmCallback = null; 
 let showArrearsOnly = false;
 
-// --- ✨ PHASE 3: THE V8 INDEXED DB ENGINE ✨ ---
+// ✨ NEW: State tracker for editing
+let editingCustomerId = null;
+
 const idb = {
     db: null,
     init: () => new Promise((resolve, reject) => {
@@ -65,7 +67,6 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// FIXED: DOUBLE QUOTES USED FOR SAFE STRING REPLACEMENT
 const escapeHTML = (str) => {
     if (!str) return '';
     return String(str)
@@ -90,7 +91,6 @@ window.getArrearsData = (c) => {
     return { isOwed: totalOwed > 0.01, total: totalOwed, monthsString: breakdown.map(b => b.month).join(', '), breakdown: breakdown };
 };
 
-// --- ✨ DATA ENGINE BOOT SEQUENCE ✨ ---
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         await idb.init(); 
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!savedData) {
             const legacyData = localStorage.getItem(DB_KEY);
             if (legacyData) {
-                console.log("Legacy Data found. Migrating to IndexedDB V8 Engine...");
+                console.log("Legacy Data found. Migrating to IndexedDB...");
                 savedData = JSON.parse(legacyData);
                 await idb.set('master_db', savedData);
             }
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             db.history = savedData.history || [];
             db.bank = savedData.bank || { name: '', acc: '' };
         }
-    } catch(err) { console.error("V8 Engine Boot Error:", err); }
+    } catch(err) { console.error("Boot Error:", err); }
 
     applyTheme(localStorage.getItem('HP_Theme') === 'true');
     const bNameEl = document.getElementById('bName'); const bAccEl = document.getElementById('bAcc');
@@ -173,8 +173,61 @@ window.renderAllSafe = () => {
     } catch (err) { console.error("Render Error:", err); }
 };
 
-window.openAddCustomerModal = () => { triggerHaptic(); document.getElementById('addCustomerModal').classList.remove('hidden'); };
-window.closeAddCustomerModal = () => document.getElementById('addCustomerModal').classList.add('hidden');
+// --- ✨ NEW: SMART EDIT/ADD MODAL LOGIC ✨ ---
+window.openAddCustomerModal = (id = null) => { 
+    triggerHaptic(); 
+    editingCustomerId = id;
+    
+    const titleEl = document.getElementById('customerModalTitle');
+    const saveBtn = document.getElementById('saveCustomerBtn');
+    const deleteBtn = document.getElementById('deleteCustomerBtn');
+
+    if (id) {
+        // Edit Mode
+        const c = db.customers.find(x => x.id === id);
+        if(!c) return;
+        
+        titleEl.innerText = "Edit Customer";
+        saveBtn.innerText = "UPDATE";
+        deleteBtn.classList.remove('hidden'); // Reveal the nuke button
+        
+        // Populate existing data
+        document.getElementById('cName').value = c.name || '';
+        document.getElementById('cHouseNum').value = c.houseNum || '';
+        document.getElementById('cStreet').value = c.street || '';
+        document.getElementById('cPostcode').value = c.postcode || '';
+        document.getElementById('cPhone').value = c.phone || '';
+        document.getElementById('cPrice').value = c.price || '';
+        document.getElementById('cNotes').value = c.notes || '';
+        document.getElementById('cWeek').value = c.week || '1';
+        document.getElementById('cDay').value = c.day || 'Mon';
+        
+        // Close briefing if it's open behind this
+        document.getElementById('briefingModal').classList.add('hidden');
+    } else {
+        // Add Mode
+        titleEl.innerText = "Add Customer";
+        saveBtn.innerText = "SAVE";
+        deleteBtn.classList.add('hidden'); // Hide the nuke button
+        
+        document.getElementById('cName').value = '';
+        document.getElementById('cHouseNum').value = '';
+        document.getElementById('cStreet').value = '';
+        document.getElementById('cPostcode').value = '';
+        document.getElementById('cPhone').value = '';
+        document.getElementById('cPrice').value = '';
+        document.getElementById('cNotes').value = '';
+        document.getElementById('cWeek').value = '1';
+        document.getElementById('cDay').value = 'Mon';
+    }
+
+    document.getElementById('addCustomerModal').classList.remove('hidden'); 
+};
+
+window.closeAddCustomerModal = () => {
+    editingCustomerId = null;
+    document.getElementById('addCustomerModal').classList.add('hidden');
+};
 
 window.saveCustomer = () => {
     triggerHaptic();
@@ -184,8 +237,7 @@ window.saveCustomer = () => {
         return;
     }
     
-    db.customers.push({ 
-        id: Date.now().toString(), 
+    const newDetails = {
         name, 
         houseNum: document.getElementById('cHouseNum').value.trim(), 
         street: document.getElementById('cStreet').value.trim(), 
@@ -193,28 +245,49 @@ window.saveCustomer = () => {
         phone: document.getElementById('cPhone').value.trim(), 
         price: parseFloat(document.getElementById('cPrice').value) || 0, 
         notes: document.getElementById('cNotes').value.trim(), 
-        cleaned: false, 
-        paidThisMonth: 0, 
-        pastArrears: [], 
         week: document.getElementById('cWeek').value, 
         day: document.getElementById('cDay').value 
-    });
+    };
+
+    if (editingCustomerId) {
+        // ✨ UPDATE EXISTING CUSTOMER ✨
+        const cIndex = db.customers.findIndex(x => x.id === editingCustomerId);
+        if (cIndex > -1) {
+            db.customers[cIndex] = { ...db.customers[cIndex], ...newDetails };
+            showToast(`${name} updated`, "success");
+        }
+    } else {
+        // ✨ ADD NEW CUSTOMER ✨
+        db.customers.push({ 
+            id: Date.now().toString(), 
+            ...newDetails,
+            cleaned: false, 
+            paidThisMonth: 0, 
+            pastArrears: []
+        });
+        showToast(`${name} added to database`, "success"); 
+    }
+    
     saveData(); 
-    showToast(`${name} added to database`, "success"); 
-    
-    document.getElementById('cName').value = '';
-    document.getElementById('cHouseNum').value = '';
-    document.getElementById('cStreet').value = '';
-    document.getElementById('cPostcode').value = '';
-    document.getElementById('cPhone').value = '';
-    document.getElementById('cPrice').value = '';
-    document.getElementById('cNotes').value = '';
-    document.getElementById('cWeek').value = '1';
-    document.getElementById('cDay').value = 'Mon';
-    
     closeAddCustomerModal();
     renderAllSafe(); 
 };
+
+// --- ✨ NEW: DELETE CUSTOMER LOGIC ✨ ---
+window.cmdDeleteCustomer = () => {
+    if (!editingCustomerId) return;
+    const c = db.customers.find(x => x.id === editingCustomerId);
+    if (!c) return;
+
+    showConfirm("Delete Customer?", `Are you sure you want to permanently remove ${c.name} from the route?`, () => {
+        db.customers = db.customers.filter(x => x.id !== editingCustomerId);
+        saveData();
+        showToast(`${c.name} deleted.`, "normal");
+        closeAddCustomerModal();
+        renderAllSafe();
+    });
+};
+
 
 window.saveBank = () => { 
     triggerHaptic();
@@ -346,7 +419,6 @@ window.renderWeek = () => {
     });
 };
 
-/* FIXED OFFICIAL UNIVERSAL GOOGLE MAPS INTENT URL */
 window.routeMyDay = () => {
     triggerHaptic();
     let todaysJobs = db.customers.filter(c => c.week == curWeek && c.day == workingDay);
@@ -356,7 +428,7 @@ window.routeMyDay = () => {
     let stops = todaysJobs.slice(0, 10).map(c => encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`));
     let destination = stops.pop(); let waypoints = stops.join('|'); 
     
-    let url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+    let url = `http://googleusercontent.com/maps.google.com/dir/?api=1&destination=${destination}`;
     if(waypoints) url += `&waypoints=${waypoints}`;
     window.open(url, '_blank');
 };
@@ -405,14 +477,16 @@ window.showJobBriefing = (id) => {
     const container = document.getElementById('briefingData');
     const arrData = window.getArrearsData(c);
     const mapQuery = encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`);
-    
-    /* FIXED OFFICIAL UNIVERSAL GOOGLE MAPS INTENT URL */
-    const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${mapQuery}`;
+    const navUrl = `http://googleusercontent.com/maps.google.com/dir/?api=1&destination=${mapQuery}`;
     
     const notesHtml = c.notes ? `<div class="CMD-notes-box">📝 ${escapeHTML(c.notes)}</div>` : '';
 
     container.innerHTML = `
-        <div class="CMD-header"><h2>${escapeHTML(c.name)}</h2><div class="CMD-header-sub">${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}</div></div>
+        <div class="CMD-header">
+            <h2>${escapeHTML(c.name)}</h2>
+            <button class="CMD-header-edit-btn" onclick="openAddCustomerModal('${c.id}')">✏️</button>
+            <div class="CMD-header-sub">${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}</div>
+        </div>
         ${notesHtml}
         ${generateArrearsHtml(arrData, c.id, 'job')}
         <div class="CMD-action-grid">
@@ -437,7 +511,11 @@ window.showCustomerBriefing = (id) => {
     const notesHtml = c.notes ? `<div class="CMD-notes-box">📝 ${escapeHTML(c.notes)}</div>` : '';
 
     container.innerHTML = `
-        <div class="CMD-header"><h2>${escapeHTML(c.name)}</h2><div class="CMD-header-sub">${escapeHTML(c.houseNum)} ${escapeHTML(c.street)} <br>${escapeHTML(c.postcode || '')}</div></div>
+        <div class="CMD-header">
+            <h2>${escapeHTML(c.name)}</h2>
+            <button class="CMD-header-edit-btn" onclick="openAddCustomerModal('${c.id}')">✏️</button>
+            <div class="CMD-header-sub">${escapeHTML(c.houseNum)} ${escapeHTML(c.street)} <br>${escapeHTML(c.postcode || '')}</div>
+        </div>
         <div class="CMD-details-box">
             <div class="CMD-detail-row"><span>📞 Phone</span><span>${escapeHTML(c.phone) || 'N/A'}</span></div>
             <div class="CMD-detail-row"><span>💰 Price</span><span>£${parseFloat(c.price).toFixed(2)}</span></div>
