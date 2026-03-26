@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v1.4</title>
+    <title>Ultimate Hydro Pro v1.5</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=14">
+    <link rel="stylesheet" href="styles.css?v=15">
 </head>
 <body class="light-mode">
 
@@ -142,7 +142,7 @@
                 </div>
                 <button class="ADM-util-btn green" onclick="cmdCycleMonth()">🚀 START NEW MONTH</button>
                 <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v1.4</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v1.5</footer>
             </div>
         </section>
 
@@ -160,7 +160,7 @@
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
             <div class="CMD-header">
-                <h2>Add Customer</h2>
+                <h2 id="customerModalTitle">Add Customer</h2>
             </div>
             <div class="ADM-row"><span>👤</span><input type="text" id="cName" placeholder="Full Name"></div>
             <div class="ADM-row"><span>🏠</span><input type="text" id="cHouseNum" placeholder="House No."></div>
@@ -199,8 +199,10 @@
             
             <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
                 <button class="ADM-save-btn" style="margin-top:0; background: var(--ios-grey); color: var(--text); box-shadow: none;" onclick="closeAddCustomerModal()">CANCEL</button>
-                <button class="ADM-save-btn" style="margin-top:0;" onclick="saveCustomer()">SAVE</button>
+                <button id="saveCustomerBtn" class="ADM-save-btn" style="margin-top:0;" onclick="saveCustomer()">SAVE</button>
             </div>
+            
+            <button id="deleteCustomerBtn" class="ADM-save-btn hidden" style="margin-top: 15px; background: transparent; border: 3px dashed var(--danger); color: var(--danger); box-shadow: none;" onclick="cmdDeleteCustomer()">🗑️ DELETE CUSTOMER</button>
         </div>
     </div>
 
@@ -246,6 +248,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=14" defer></script>
+    <script src="app.js?v=15" defer></script>
 </body>
 </html>
