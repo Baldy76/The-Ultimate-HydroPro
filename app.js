@@ -65,7 +65,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// ✨ FIXED: 100% Syntax-safe HTML Escaping ✨
+// 100% Syntax-safe HTML Escaping
 const escapeHTML = (str) => {
     if (!str) return '';
     return String(str)
@@ -84,7 +84,7 @@ window.getArrearsData = (c) => {
     let breakdown = pastLog.map(a => ({ month: a.month, amt: parseFloat(a.amt) }));
     if (currentOwed > 0.01) breakdown.push({ month: currentMonthStr, amt: currentOwed });
     const totalOwed = breakdown.reduce((sum, item) => sum + item.amt, 0);
-    return { isOwed: totalOwed > 0.01, total: totalOwed, breakdown: breakdown };
+    return { isOwed: totalOwed > 0.01, total: totalOwed, monthsString: breakdown.map(b => b.month).join(', '), breakdown: breakdown };
 };
 
 let wthStartY = 0; let wthContainer = null; let ptrIndicator = null;
@@ -107,7 +107,7 @@ const initPTR = () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("Ultimate Hydro Pro v4.5 Booting...");
+    console.log("Ultimate Hydro Pro v4.6 Booting...");
     try {
         await idb.init(); 
         let savedData = await idb.get('master_db');
@@ -135,6 +135,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.segment').forEach(b => { if(b.id && b.id.startsWith('wk-btn-')) b.classList.remove('active'); });
     const activeWkBtn = document.getElementById(`wk-btn-${curWeek}`);
     if(activeWkBtn) activeWkBtn.classList.add('active');
+    
+    // Bind Confirm Button
+    const confirmBtn = document.getElementById('confirmActionBtn');
+    if(confirmBtn) {
+        confirmBtn.addEventListener('click', () => { if(confirmCallback) confirmCallback(); window.closeConfirmModal(); });
+    }
 
     renderAllSafe(); initWeather(); initPTR();
 
@@ -151,6 +157,7 @@ window.runDeepScanRecovery = async () => {
     
     setTimeout(async () => {
         let foundDb = null;
+        
         for (let i = 0; i < localStorage.length; i++) {
             let key = localStorage.key(i);
             if (key.includes('Hydro') || key.includes('DB') || key.includes('Gold')) {
@@ -186,6 +193,7 @@ function applyTheme(isDark) {
 
 window.setThemeMode = (isDark) => { triggerHaptic(); applyTheme(isDark); localStorage.setItem('HP_Theme', isDark); if(document.getElementById('finances-root').classList.contains('active')) renderFinances(); };
 window.saveData = () => { idb.set('master_db', db); };
+
 window.openTab = (id, btnId = null) => {
     triggerHaptic(); document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     const target = document.getElementById(id);
@@ -211,7 +219,6 @@ window.renderHome = () => {
     const dateOptions = { weekday: 'long', month: 'long', day: 'numeric' };
     document.getElementById('home-date').innerText = new Date().toLocaleDateString('en-GB', dateOptions).toUpperCase();
 
-    // ✨ FIXED: The Smart Time of Day Engine ✨
     const currentHour = new Date().getHours();
     let greeting = "Good Morning.";
     if (currentHour >= 12 && currentHour < 17) greeting = "Good Afternoon.";
@@ -290,9 +297,12 @@ window.saveCustomer = () => {
     const name = document.getElementById('cName').value.trim();
     if(!name) { showToast("Customer Name is required", "error"); return; }
     
+    // Convert Postcode to Uppercase Safely
+    const rawPostcode = document.getElementById('cPostcode').value || '';
+    
     const newDetails = {
         name, houseNum: document.getElementById('cHouseNum').value.trim(), street: document.getElementById('cStreet').value.trim(), 
-        postcode: document.getElementById('cPostcode').value.trim().toUpperCase(), phone: document.getElementById('cPhone').value.trim(), 
+        postcode: rawPostcode.trim().toUpperCase(), phone: document.getElementById('cPhone').value.trim(), 
         price: parseFloat(document.getElementById('cPrice').value) || 0, notes: document.getElementById('cNotes').value.trim(), 
         freq: parseInt(document.getElementById('cFreq').value) || 4, week: document.getElementById('cWeek').value, day: document.getElementById('cDay').value 
     };
@@ -318,18 +328,24 @@ window.saveCustomer = () => {
 window.cmdDeleteCustomer = () => {
     if (!editingCustomerId) return;
     const c = db.customers.find(x => x.id === editingCustomerId); if (!c) return;
-    showConfirm("Delete Customer?", `Are you sure you want to permanently remove ${c.name} from the route?`, () => {
+    window.showConfirm("Delete Customer?", `Are you sure you want to permanently remove ${c.name} from the route?`, () => {
         db.customers = db.customers.filter(x => x.id !== editingCustomerId); saveData(); showToast(`${c.name} deleted.`, "normal"); closeAddCustomerModal(); renderAllSafe();
     });
 };
 window.saveBank = () => { triggerHaptic(); db.bank.name = document.getElementById('bName').value; db.bank.acc = document.getElementById('bAcc').value; saveData(); showToast("Bank Details Secured 🔒", "success"); };
 
-const showConfirm = (title, text, actionCallback) => { triggerHaptic(); document.getElementById('confirmTitle').innerText = title; document.getElementById('confirmText').innerText = text; confirmCallback = actionCallback; document.getElementById('confirmModal').classList.remove('hidden'); };
+// ✨ RESTORED: Confirm Modals and Handlers ✨
+window.showConfirm = (title, text, actionCallback) => { 
+    triggerHaptic(); 
+    document.getElementById('confirmTitle').innerText = title; 
+    document.getElementById('confirmText').innerText = text; 
+    confirmCallback = actionCallback; 
+    document.getElementById('confirmModal').classList.remove('hidden'); 
+};
 window.closeConfirmModal = () => { document.getElementById('confirmModal').classList.add('hidden'); confirmCallback = null; };
-document.getElementById('confirmActionBtn').addEventListener('click', () => { if(confirmCallback) confirmCallback(); closeConfirmModal(); });
 
 window.cmdCycleMonth = () => {
-    showConfirm("Start New Month?", "This will reset all cleans to false and roll unpaid balances into arrears.", () => {
+    window.showConfirm("Start New Month?", "This will reset all cleans to false and roll unpaid balances into arrears.", () => {
         const cycleMonth = new Date().toLocaleString('en-GB', { month: 'short', year: '2-digit' });
         db.customers.forEach(c => { 
             const paid = parseFloat(c.paidThisMonth) || 0; const price = c.cleaned ? (parseFloat(c.price) || 0) : 0; 
@@ -342,7 +358,7 @@ window.cmdCycleMonth = () => {
         db.expenses = []; saveData(); location.reload();
     });
 };
-window.cmdNuclear = () => { showConfirm("FACTORY RESET?", "This will permanently delete all customer data, finances, and settings.", async () => { await idb.clear(); localStorage.removeItem(DB_KEY); location.reload(); }); };
+window.cmdNuclear = () => { window.showConfirm("FACTORY RESET?", "This will permanently delete all customer data, finances, and settings.", async () => { await idb.clear(); localStorage.removeItem(DB_KEY); location.reload(); }); };
 
 window.exportToQuickBooks = () => { triggerHaptic(); let csv = "Date,Description,Amount,Type,Category\n"; const today = new Date().toLocaleDateString('en-GB'); db.customers.forEach(c => { if(parseFloat(c.paidThisMonth) > 0) csv += `${today},Income: ${escapeHTML(c.name)},${c.paidThisMonth},Income,Service\n`; }); db.expenses.forEach(e => { csv += `${e.date},${escapeHTML(e.desc)},${e.amt},Expense,${escapeHTML(e.cat) || 'Other'}\n`; }); triggerDownload(csv, "HydroPro_QuickBooks.csv"); };
 window.exportToXero = () => { triggerHaptic(); let csv = "Date,Description,Reference,Amount,AccountCode\n"; const today = new Date().toLocaleDateString('en-GB'); db.customers.forEach(c => { if(parseFloat(c.paidThisMonth) > 0) csv += `${today},Window Cleaning - ${escapeHTML(c.name)},${c.id},${c.paidThisMonth},200\n`; }); db.expenses.forEach(e => { csv += `${e.date},${escapeHTML(e.desc)},${escapeHTML(e.cat)},-${e.amt},400\n`; }); triggerDownload(csv, "HydroPro_Xero.csv"); };
@@ -366,7 +382,7 @@ window.renderMaster = () => {
         if(c.name.toLowerCase().includes(search) || (c.street||"").toLowerCase().includes(search) || phoneStr.includes(searchStr) || postStr.includes(searchStr)) {
             renderedCount++;
             const arrearsBadge = arrData.isOwed ? `<span class="CST-badge badge-unpaid">OWES £${arrData.total.toFixed(2)}</span>` : `<span class="CST-badge badge-paid">PAID</span>`;
-            const div = document.createElement('div'); div.className = 'CST-card-item'; div.onclick = () => showCustomerBriefing(c.id);
+            const div = document.createElement('div'); div.className = 'CST-card-item'; div.onclick = () => window.showCustomerBriefing(c.id);
             div.innerHTML = `<div class="CST-card-top"><div><strong style="font-size:20px;">${escapeHTML(c.name)}</strong><br><small style="color:var(--accent); font-weight:800;">${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}</small></div><div style="font-weight:950; font-size:22px;">£${(parseFloat(c.price)||0).toFixed(2)}</div></div><div class="CST-card-badges">${arrearsBadge}</div>`;
             list.appendChild(div);
         }
@@ -399,7 +415,7 @@ const attachSwipeGestures = (wrap, fg, cId) => {
         if(e.target.closest('.drag-handle') || e.target.closest('.quick-action-btn')) return; let diff = currentX - startX; fg.classList.remove('swiping'); fg.style.transform = `translate3d(0, 0, 0)`;
         if (isSwiping) { if (diff > 55) { cmdToggleClean(cId); } else if (diff < -55) { cmdSettlePaid(cId, 'job'); } } setTimeout(() => { isSwiping = false; }, 100); startX = 0; currentX = 0;
     });
-    fg.addEventListener('click', e => { if(!isSwiping && !e.target.closest('.drag-handle') && !e.target.closest('.quick-action-btn')) { showJobBriefing(cId); } });
+    fg.addEventListener('click', e => { if(!isSwiping && !e.target.closest('.drag-handle') && !e.target.closest('.quick-action-btn')) { window.showJobBriefing(cId); } });
 };
 
 const attachDragDrop = (wrap, listContainer) => {
@@ -444,10 +460,20 @@ window.renderWeek = () => {
 };
 
 window.cmdQuickCall = (phone, e) => { e.stopPropagation(); triggerHaptic(); if(!phone) return showToast("No phone number saved.", "error"); window.location.href = `tel:${escapeHTML(phone)}`; };
-window.cmdQuickRoute = (id, e) => { e.stopPropagation(); triggerHaptic(); const c = db.customers.find(x => x.id === id); if(!c) return; const mapQuery = encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`); window.open(`https://www.google.com/maps/dir/?api=1&destination=${mapQuery}`, '_blank'); };
-window.cmdToggleSkip = (id) => { triggerHaptic(); const c = db.customers.find(x => x.id === id); c.skipped = !c.skipped; if(c.skipped) c.cleaned = false; saveData(); renderAllSafe(); closeBriefing(); showToast(c.skipped ? "Job Skipped ⏭️" : "Skip Removed", "normal"); };
 
-// ✨ FIXED: SMS now forces open properly with window.location.href. Price is passed natively. ✨
+// ✨ RESTORED: Route My Day Logic
+window.routeMyDay = () => {
+    triggerHaptic();
+    let jobs = db.customers.filter(c => String(c.week).trim() === String(curWeek).trim() && String(c.day).trim() === String(workingDay).trim() && !c.skipped && !c.cleaned).sort((a,b) => (a.order||0) - (b.order||0)).slice(0, 10);
+    if(jobs.length === 0) return showToast("No uncleaned jobs to route!", "error");
+    let baseUrl = "https://www.google.com/maps/dir/";
+    let waypoints = jobs.map(c => encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`)).join('/');
+    window.open(baseUrl + waypoints, '_blank');
+};
+window.cmdQuickRoute = (id, e) => { e.stopPropagation(); triggerHaptic(); const c = db.customers.find(x => x.id === id); if(!c) return; const mapQuery = encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`); window.open(`https://www.google.com/maps/search/?api=1&query=${mapQuery}`, '_blank'); };
+
+window.cmdToggleSkip = (id) => { triggerHaptic(); const c = db.customers.find(x => x.id === id); c.skipped = !c.skipped; if(c.skipped) c.cleaned = false; saveData(); renderAllSafe(); window.closeBriefing(); showToast(c.skipped ? "Job Skipped ⏭️" : "Skip Removed", "normal"); };
+
 window.cmdReceiptWA = (phone, amt, date) => { triggerHaptic(); if(!phone || phone === 'undefined') return showToast("No phone number saved.", "error"); let p = phone.replace(/\D/g, ''); if(p.startsWith('0')) p = '44' + p.substring(1); let msg = `Receipt from Hydro Pro 💧\n\nReceived: £${parseFloat(amt).toFixed(2)}\nDate: ${date}\n\nThank you for your business!`; window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`, '_blank'); };
 window.cmdReceiptSMS = (phone, amt, date) => { triggerHaptic(); if(!phone || phone === 'undefined') return showToast("No phone number saved.", "error"); let p = phone.replace(/\D/g, ''); let msg = `Receipt from Hydro Pro 💧\n\nReceived: £${parseFloat(amt).toFixed(2)}\nDate: ${date}\n\nThank you for your business!`; const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; const separator = isIOS ? '&' : '?'; window.location.href = `sms:${p}${separator}body=${encodeURIComponent(msg)}`; };
 
@@ -497,7 +523,7 @@ window.handlePhotoUpload = (e) => {
                 if(!c.photos) c.photos = [];
                 c.photos.push({ id: Date.now(), data: dataUrl, date: new Date().toLocaleDateString('en-GB') });
                 saveData(); showToast("Evidence Saved 📸", "success");
-                showCustomerBriefing(c.id); 
+                window.showCustomerBriefing(c.id); 
             }
         };
         img.src = event.target.result;
@@ -505,7 +531,7 @@ window.handlePhotoUpload = (e) => {
     reader.readAsDataURL(file);
 };
 
-// ✨ FIXED: New logic that prints Balance £0.00 until they actually owe money ✨
+// ✨ FIXED: Now correctly displays £0.00 for new customers instead of "Fully Paid" ✨
 const generateArrearsHtml = (arrData, cId, context, phone) => { 
     if (!arrData.isOwed) return `<div class="CMD-alert-success" style="cursor:default;">✅ BALANCE: £0.00</div>`;
     let listHtml = arrData.breakdown.map(b => `<li>£${b.amt.toFixed(2)} - ${escapeHTML(b.month)}</li>`).join('');
@@ -538,11 +564,13 @@ const generatePhotoHtml = (c) => {
     return `<h3 class="CMD-history-hdr">Evidence Photos</h3><div class="CMD-photo-gallery">${imgTags}</div>`;
 };
 
-// ✨ FIXED: Added back the full 3x3 Action Grid and correct price parameters ✨
+// ✨ RESTORED: closeBriefing logic that allows the 'X' button to work! ✨
+window.closeBriefing = () => { document.getElementById('briefingModal').classList.add('hidden'); };
+
 window.showJobBriefing = (id) => {
     triggerHaptic(); const c = db.customers.find(x => x.id === id); if(!c) return;
     const container = document.getElementById('briefingData'); const arrData = window.getArrearsData(c);
-    const mapQuery = encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`); const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${mapQuery}`;
+    const mapQuery = encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`); const navUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
     const notesHtml = c.notes ? `<div class="CMD-notes-box">📝 ${escapeHTML(c.notes)}</div>` : '';
 
     container.innerHTML = `
@@ -633,9 +661,9 @@ window.cmdGenerateTaxPDF = () => {
             <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px 0;"><span>Subsistence (Food)</span><span>£${expData.Food.toFixed(2)}</span></div>
             <div style="display:flex; justify-content:space-between; border-bottom:2px solid #000; padding:5px 0;"><span>Other</span><span>£${expData.Other.toFixed(2)}</span></div>
             <div style="display:flex; justify-content:space-between; padding:10px 0;"><strong>Total Expenses</strong><strong style="color:#ff453a;">-£${totalSpend.toFixed(2)}</strong></div>
-            <hr style="border: 1px solid #eee; margin-top: 30px;">
-            <p style="text-align: right; font-size: 26px; margin-top: 20px; color: #34C759;"><strong>Net Profit: £${(totalIncome - totalSpend).toFixed(2)}</strong></p>
-            <p style="font-size: 12px; color: #999; text-align: center; margin-top:50px;">Generated by Ultimate Hydro Pro. Keep for your self-assessment records.</p>
+            <hr style="border: 1px solid #eee; margin: 30px 0;">
+            <p style="text-align: right; font-size: 26px; color: #34C759;"><strong>Net Profit: £${(totalIncome - totalSpend).toFixed(2)}</strong></p>
+            <p style="font-size: 12px; color: #999; text-align: center; margin-top:50px;">Generated by Ultimate Hydro Pro.</p>
         </div>
     `;
     window.print();
@@ -727,6 +755,58 @@ window.renderFinances = () => {
         ledger.innerHTML = ledgerHtml; 
     }
 };
+
+// ✨ RESTORED: Missing function for Setting Payment Method ✨
+window.setPayMethod = (method) => {
+    currentPayMethod = method;
+    document.getElementById('btnPayCash').classList.remove('active');
+    document.getElementById('btnPayBank').classList.remove('active');
+    if (method === 'Cash') document.getElementById('btnPayCash').classList.add('active');
+    if (method === 'Bank') document.getElementById('btnPayBank').classList.add('active');
+};
+
+// ✨ RESTORED: Missing function for the Tomorrow Reminder feature ✨
+window.openTomorrowModal = () => {
+    triggerHaptic();
+    const list = document.getElementById('tomorrow-list');
+    list.innerHTML = '';
+    
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    let todayIdx = days.indexOf(workingDay);
+    let tmrwIdx = (todayIdx + 1) % 7;
+    let tmrwDay = days[tmrwIdx];
+    let tmrwWeek = curWeek;
+    if (tmrwIdx === 1 && todayIdx === 0) { tmrwWeek = curWeek >= 5 ? 1 : curWeek + 1; }
+    
+    document.getElementById('tomorrow-title-sub').innerText = `Wk ${tmrwWeek} - ${tmrwDay}`;
+    
+    let tmrwJobs = db.customers.filter(c => String(c.week).trim() === String(tmrwWeek).trim() && String(c.day).trim() === String(tmrwDay).trim() && !c.skipped);
+    
+    if (tmrwJobs.length === 0) {
+        list.innerHTML = '<div style="padding:20px; text-align:center; opacity:0.5; font-weight:800;">No jobs scheduled for tomorrow.</div>';
+    } else {
+        tmrwJobs.forEach(c => {
+            let p = (c.phone || '').replace(/\D/g, '');
+            let isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; 
+            let sep = isIOS ? '&' : '?';
+            let msg = `Hi ${c.name}, just a quick reminder from Hydro Pro that your window clean is due tomorrow! Please leave any side gates unlocked. Thank you! 💧`;
+            let smsLink = p ? `sms:${p}${sep}body=${encodeURIComponent(msg)}` : '#';
+            let waLink = p ? `https://wa.me/${p.startsWith('0') ? '44' + p.substring(1) : p}?text=${encodeURIComponent(msg)}` : '#';
+            
+            list.innerHTML += `
+                <div style="background:var(--ios-grey); padding:15px; border-radius:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="flex:1;"><strong>${escapeHTML(c.name)}</strong><br><small>${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}</small></div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="quick-action-btn" style="margin:0; background:rgba(52, 199, 89, 0.2); color:var(--success);" onclick="window.open('${waLink}', '_blank')">💬</button>
+                        <button class="quick-action-btn" style="margin:0; background:rgba(0, 122, 255, 0.2); color:var(--accent);" onclick="window.location.href='${smsLink}'">📱</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    document.getElementById('tomorrowModal').classList.remove('hidden');
+};
+window.closeTomorrowModal = () => { document.getElementById('tomorrowModal').classList.add('hidden'); };
 
 const getIcon = (code) => { const map = { '01d':'☀️','01n':'🌙','02d':'⛅','02n':'☁️','03d':'☁️','03n':'☁️','04d':'☁️','04n':'☁️','09d':'🌧️','09n':'🌧️','10d':'🌧️','10n':'🌧️','11d':'🌦️','11n':'🌧️','13d':'🌨️','13n':'🌨️','50d':'💨','50n':'💨' }; return map[code] || '🌤️'; };
 async function initWeather() { 
