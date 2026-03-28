@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v5.1</title>
+    <title>Ultimate Hydro Pro v5.2</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=51">
+    <link rel="stylesheet" href="styles.css?v=52">
 </head>
 <body class="light-mode">
 
@@ -195,6 +195,12 @@
             </div>
             
             <div class="ADM-util-vault">
+                <div class="ADM-card" style="border: 2px solid var(--success); text-align: center; margin: 0 0 20px; box-shadow: none!important;">
+                    <h3 class="ADM-hdr" style="color: var(--success); margin-bottom: 5px;">Auto-Cycle Engine</h3>
+                    <p style="font-size: 11px; font-weight: 800; opacity: 0.7; margin: 0 0 10px;">Automatically handles customer cycles and arrears.</p>
+                    <div style="font-size: 13px; color: var(--success); font-weight: 900;">✅ STATUS: ACTIVE</div>
+                </div>
+
                 <h3 class="ADM-hdr" style="text-align: left; margin: 0 0 10px;">Accounting Sync</h3>
                 <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0; margin-bottom: 20px;">
                     <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#2ca01c; box-shadow:0 5px 15px rgba(44,160,28,0.2);" onclick="exportToQuickBooks()">QuickBooks</button>
@@ -207,9 +213,9 @@
                     <button class="ADM-util-btn grey" style="flex: 1; width: auto!important; height: 70px!important; margin: 0;" onclick="document.getElementById('importFile').click()">📥 Restore App</button>
                     <input type="file" id="importFile" hidden onchange="importData(event)" accept=".json">
                 </div>
-                <button class="ADM-util-btn green" onclick="cmdCycleMonth()">🚀 START NEW MONTH</button>
+                
                 <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v5.1</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v5.2</footer>
             </div>
         </section>
 
@@ -273,9 +279,7 @@
             <div class="ADM-row"><span>👤</span><input type="text" id="cName" placeholder="Full Name"></div>
             <div class="ADM-row"><span>🏠</span><input type="text" id="cHouseNum" placeholder="House No."></div>
             <div class="ADM-row"><span>🛣️</span><input type="text" id="cStreet" placeholder="Street Name"></div>
-            
             <div class="ADM-row"><span>📍</span><input type="text" id="cPostcode" placeholder="Postcode" oninput="this.value = this.value.toUpperCase()"></div>
-            
             <div class="ADM-row"><span>📞</span><input type="tel" id="cPhone" placeholder="Phone Number"></div>
             <div class="ADM-row"><span>💰</span><input type="text" inputmode="decimal" pattern="[0-9\.]*" id="cPrice" placeholder="Price £"></div>
             <div class="ADM-row">
@@ -347,3 +351,22 @@
             <div id="tomorrow-list" style="max-height: 50vh; overflow-y: auto;"></div>
         </div>
     </div>
+
+    <div id="confirmModal" class="modal-overlay hidden" onclick="closeConfirmModal()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="text-align: center;">
+            <button class="close-x-btn" onclick="closeConfirmModal()">✕</button>
+            <div style="font-size: 40px; margin-bottom: 10px; margin-top: 15px;" id="confirmIcon">⚠️</div>
+            <h2 style="margin: 0 0 10px; font-weight: 950;" id="confirmTitle">Are you sure?</h2>
+            <p style="margin: 0 0 25px; opacity: 0.6; font-weight: 600; font-size: 16px;" id="confirmText">This action cannot be undone.</p>
+            <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0;">
+                <button class="ADM-save-btn" style="margin-top:0; background: var(--ios-grey); color: var(--text); box-shadow: none;" onclick="closeConfirmModal()">CANCEL</button>
+                <button class="ADM-save-btn" id="confirmActionBtn" style="margin-top:0; background: var(--danger); box-shadow: 0 8px 20px rgba(255,69,58,0.25);">CONFIRM</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="print-area"></div>
+
+    <script src="app.js?v=52" defer></script>
+</body>
+</html>
