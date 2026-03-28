@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v5.2</title>
+    <title>Ultimate Hydro Pro v5.4</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=52">
+    <link rel="stylesheet" href="styles.css?v=54">
 </head>
 <body class="light-mode">
 
@@ -87,7 +87,7 @@
                 <button class="WEE-day-btn" id="day-Sun" onclick="setWorkingDay('Sun', this)">S</button>
             </div>
             <div style="display:flex; gap:10px; margin: 0 20px 10px; width: calc(100% - 40px);">
-                <button class="ADM-save-btn" style="margin:0; flex: 2; width: auto!important; background: var(--text); color: var(--bg);" onclick="routeMyDay()">📍 ROUTE</button>
+                <button class="ADM-save-btn" style="margin:0; flex: 2; width: auto!important; background: var(--text); color: var(--bg);" onclick="routeMyDay()">📍 MAP ROUTE</button>
                 <button class="ADM-save-btn" style="margin:0; flex: 1; width: auto!important; background: transparent; border: 2px solid var(--accent); color: var(--accent); box-shadow: none; font-size:13px;" onclick="openTomorrowModal()">🔮 TMRW</button>
             </div>
             <div id="WEE-progress-dashboard"></div>
@@ -215,7 +215,7 @@
                 </div>
                 
                 <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v5.2</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v5.4</footer>
             </div>
         </section>
 
@@ -231,10 +231,10 @@
 
     <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden onchange="handlePhotoUpload(event)">
 
-    <div id="aiTeaserModal" class="modal-overlay hidden" onclick="closeAITeaserModal()">
+    <div id="aiTeaserModal" class="modal-overlay hidden" onclick="closeAllModals()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
-            <button class="close-x-btn" onclick="closeAITeaserModal()">✕</button>
+            <button class="close-x-btn" onclick="closeAllModals()">✕</button>
             <div class="CMD-header" style="text-align:center; border:none; padding-bottom: 0;">
                 <div style="font-size: 50px; margin-bottom: 5px;">✨</div>
                 <h2 style="font-size: 26px; padding:0;">Wake up Hydro AI</h2>
@@ -250,10 +250,10 @@
         </div>
     </div>
 
-    <div id="expenseModal" class="modal-overlay hidden" onclick="closeExpenseModal()">
+    <div id="expenseModal" class="modal-overlay hidden" onclick="closeAllModals()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
-            <button class="close-x-btn" onclick="closeExpenseModal()">✕</button>
+            <button class="close-x-btn" onclick="closeAllModals()">✕</button>
             <div class="CMD-header"><h2>Log Expense</h2></div>
             <div class="ADM-row">
                 <span>🏷️</span>
@@ -271,10 +271,10 @@
         </div>
     </div>
 
-    <div id="addCustomerModal" class="modal-overlay hidden" onclick="closeAddCustomerModal()">
+    <div id="addCustomerModal" class="modal-overlay hidden" onclick="closeAllModals()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
-            <button class="close-x-btn" onclick="closeAddCustomerModal()">✕</button>
+            <button class="close-x-btn" onclick="closeAllModals()">✕</button>
             <div class="CMD-header"><h2 id="customerModalTitle">Add Customer</h2></div>
             <div class="ADM-row"><span>👤</span><input type="text" id="cName" placeholder="Full Name"></div>
             <div class="ADM-row"><span>🏠</span><input type="text" id="cHouseNum" placeholder="House No."></div>
@@ -299,25 +299,25 @@
                 <textarea id="cNotes" placeholder="Additional Notes (e.g. Beware of dog...)" rows="3"></textarea>
             </div>
             <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
-                <button class="ADM-save-btn" style="margin-top:0; background: var(--ios-grey); color: var(--text); box-shadow: none;" onclick="closeAddCustomerModal()">CANCEL</button>
+                <button class="ADM-save-btn" style="margin-top:0; background: var(--ios-grey); color: var(--text); box-shadow: none;" onclick="closeAllModals()">CANCEL</button>
                 <button id="saveCustomerBtn" class="ADM-save-btn" style="margin-top:0;" onclick="saveCustomer()">SAVE</button>
             </div>
             <button id="deleteCustomerBtn" class="ADM-save-btn hidden" style="margin-top: 15px; background: transparent; border: 3px dashed var(--danger); color: var(--danger); box-shadow: none;" onclick="cmdDeleteCustomer()">🗑️ DELETE CUSTOMER</button>
         </div>
     </div>
 
-    <div id="briefingModal" class="modal-overlay hidden" onclick="closeBriefing()">
+    <div id="briefingModal" class="modal-overlay hidden" onclick="closeAllModals()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
-            <button class="close-x-btn" onclick="closeBriefing()">✕</button>
+            <button class="close-x-btn" onclick="closeAllModals()">✕</button>
             <div id="briefingData"></div>
         </div>
     </div>
 
-    <div id="paymentModal" class="modal-overlay hidden" onclick="closePaymentModal()">
+    <div id="paymentModal" class="modal-overlay hidden" onclick="closeAllModals()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
-            <button class="close-x-btn" onclick="closePaymentModal()">✕</button>
+            <button class="close-x-btn" onclick="closeAllModals()">✕</button>
             <div class="theme-segmented-control" style="margin-bottom: 20px;">
                 <button id="btnPayCash" class="segment active" onclick="setPayMethod('Cash')">💵 Cash</button>
                 <button id="btnPayBank" class="segment" onclick="setPayMethod('Bank')">🏦 Bank Tx</button>
@@ -339,10 +339,10 @@
         </div>
     </div>
 
-    <div id="tomorrowModal" class="modal-overlay hidden" onclick="closeTomorrowModal()">
+    <div id="tomorrowModal" class="modal-overlay hidden" onclick="closeAllModals()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
-            <button class="close-x-btn" onclick="closeTomorrowModal()">✕</button>
+            <button class="close-x-btn" onclick="closeAllModals()">✕</button>
             <div class="CMD-header">
                 <h2>Tomorrow's Route</h2>
                 <div class="CMD-header-sub" id="tomorrow-title-sub">Loading...</div>
@@ -352,14 +352,14 @@
         </div>
     </div>
 
-    <div id="confirmModal" class="modal-overlay hidden" onclick="closeConfirmModal()">
+    <div id="confirmModal" class="modal-overlay hidden" onclick="closeAllModals()">
         <div class="modal-content" onclick="event.stopPropagation()" style="text-align: center;">
-            <button class="close-x-btn" onclick="closeConfirmModal()">✕</button>
+            <button class="close-x-btn" onclick="closeAllModals()">✕</button>
             <div style="font-size: 40px; margin-bottom: 10px; margin-top: 15px;" id="confirmIcon">⚠️</div>
             <h2 style="margin: 0 0 10px; font-weight: 950;" id="confirmTitle">Are you sure?</h2>
             <p style="margin: 0 0 25px; opacity: 0.6; font-weight: 600; font-size: 16px;" id="confirmText">This action cannot be undone.</p>
             <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0;">
-                <button class="ADM-save-btn" style="margin-top:0; background: var(--ios-grey); color: var(--text); box-shadow: none;" onclick="closeConfirmModal()">CANCEL</button>
+                <button class="ADM-save-btn" style="margin-top:0; background: var(--ios-grey); color: var(--text); box-shadow: none;" onclick="closeAllModals()">CANCEL</button>
                 <button class="ADM-save-btn" id="confirmActionBtn" style="margin-top:0; background: var(--danger); box-shadow: 0 8px 20px rgba(255,69,58,0.25);">CONFIRM</button>
             </div>
         </div>
@@ -367,6 +367,6 @@
 
     <div id="print-area"></div>
 
-    <script src="app.js?v=52" defer></script>
+    <script src="app.js?v=5.4" defer></script>
 </body>
 </html>
