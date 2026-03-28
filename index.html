@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v4.6</title>
+    <title>Ultimate Hydro Pro v5.1</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=46">
+    <link rel="stylesheet" href="styles.css?v=51">
 </head>
 <body class="light-mode">
 
@@ -209,7 +209,7 @@
                 </div>
                 <button class="ADM-util-btn green" onclick="cmdCycleMonth()">🚀 START NEW MONTH</button>
                 <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v4.6</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v5.1</footer>
             </div>
         </section>
 
@@ -260,7 +260,7 @@
                 </select>
             </div>
             <div class="ADM-row"><span>🛒</span><input type="text" id="mExpDesc" placeholder="What did you buy?"></div>
-            <div class="ADM-row"><span>💸</span><input type="number" id="mExpAmt" placeholder="Amount £"></div>
+            <div class="ADM-row"><span>💸</span><input type="text" inputmode="decimal" pattern="[0-9\.]*" id="mExpAmt" placeholder="Amount £"></div>
             <button class="ADM-save-btn" style="margin-top:25px;" onclick="addFinanceExpense()">SAVE EXPENSE</button>
         </div>
     </div>
@@ -277,7 +277,7 @@
             <div class="ADM-row"><span>📍</span><input type="text" id="cPostcode" placeholder="Postcode" oninput="this.value = this.value.toUpperCase()"></div>
             
             <div class="ADM-row"><span>📞</span><input type="tel" id="cPhone" placeholder="Phone Number"></div>
-            <div class="ADM-row"><span>💰</span><input type="number" id="cPrice" placeholder="Price £"></div>
+            <div class="ADM-row"><span>💰</span><input type="text" inputmode="decimal" pattern="[0-9\.]*" id="cPrice" placeholder="Price £"></div>
             <div class="ADM-row">
                 <span>🔄</span>
                 <select id="cFreq"><option value="4">4 Weekly</option><option value="8">8 Weekly</option><option value="12">12 Weekly</option></select>
@@ -328,7 +328,7 @@
                 <div style="font-size: 11px; font-weight: 900; opacity: 0.5; text-transform: uppercase; margin-bottom: 10px; text-align: center;">Or Enter Custom Amount</div>
                 <div class="ADM-row" style="border: none; height: 60px!important; margin-bottom: 15px; justify-content: center;">
                     <span style="font-size: 26px; font-weight: 900; color: var(--text); width: auto;">£</span>
-                    <input type="number" id="pay-custom-amt" placeholder="0.00" style="font-size: 32px; font-weight: 950; text-align: center; color: var(--text); width: 120px; flex: none;">
+                    <input type="text" inputmode="decimal" pattern="[0-9\.]*" id="pay-custom-amt" placeholder="0.00" style="font-size: 32px; font-weight: 950; text-align: center; color: var(--text); width: 120px; flex: none;">
                 </div>
                 <button class="ADM-save-btn" style="height: 60px!important; font-size: 16px; margin-top: 0; background: var(--text); color: var(--bg);" onclick="processPayment('custom')">APPLY PARTIAL PAYMENT</button>
             </div>
@@ -347,22 +347,3 @@
             <div id="tomorrow-list" style="max-height: 50vh; overflow-y: auto;"></div>
         </div>
     </div>
-
-    <div id="confirmModal" class="modal-overlay hidden" onclick="closeConfirmModal()">
-        <div class="modal-content" onclick="event.stopPropagation()" style="text-align: center;">
-            <button class="close-x-btn" onclick="closeConfirmModal()">✕</button>
-            <div style="font-size: 40px; margin-bottom: 10px; margin-top: 15px;" id="confirmIcon">⚠️</div>
-            <h2 style="margin: 0 0 10px; font-weight: 950;" id="confirmTitle">Are you sure?</h2>
-            <p style="margin: 0 0 25px; opacity: 0.6; font-weight: 600; font-size: 16px;" id="confirmText">This action cannot be undone.</p>
-            <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0;">
-                <button class="ADM-save-btn" style="margin-top:0; background: var(--ios-grey); color: var(--text); box-shadow: none;" onclick="closeConfirmModal()">CANCEL</button>
-                <button class="ADM-save-btn" id="confirmActionBtn" style="margin-top:0; background: var(--danger); box-shadow: 0 8px 20px rgba(255,69,58,0.25);">CONFIRM</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="print-area"></div>
-
-    <script src="app.js?v=46" defer></script>
-</body>
-</html>
