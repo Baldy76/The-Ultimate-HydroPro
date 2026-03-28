@@ -102,7 +102,7 @@ window.getArrearsData = (c) => {
     let pastLog = c.pastArrears || [];
     let thisMonthCharge = c.cleaned ? (parseFloat(c.price) || 0) : 0;
     let currentOwed = thisMonthCharge - (parseFloat(c.paidThisMonth) || 0);
-    let breakdown = pastLog.map(a => ({ month: a.month, amt: parseFloat(a.amt) }));
+    let breakdown = pastLog.map(a => ({ month: a.month, amt: parseFloat(a.amt) || 0 }));
     if (currentOwed > 0.01) breakdown.push({ month: currentMonthStr, amt: currentOwed });
     const totalOwed = breakdown.reduce((sum, item) => sum + item.amt, 0);
     return { isOwed: totalOwed > 0.01, total: totalOwed, monthsString: breakdown.map(b => b.month).join(', '), breakdown: breakdown };
@@ -162,7 +162,7 @@ const initPTR = () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("Ultimate Hydro Pro v5.4 Booting...");
+    console.log("Ultimate Hydro Pro v5.5 Booting...");
     try {
         await idb.init(); 
         let savedData = await idb.get('master_db');
@@ -221,6 +221,7 @@ window.runDeepScanRecovery = async () => {
     
     setTimeout(async () => {
         let foundDb = null;
+        
         for (let i = 0; i < localStorage.length; i++) {
             let key = localStorage.key(i);
             if (key.includes('Hydro') || key.includes('DB') || key.includes('Gold')) {
@@ -308,7 +309,6 @@ window.openAITeaserModal = () => {
     const modal = document.getElementById('aiTeaserModal');
     if(modal) modal.classList.remove('hidden');
 };
-window.closeAITeaserModal = () => { window.closeAllModals(); };
 window.saveModalAIKey = () => {
     triggerHaptic(); const key = document.getElementById('aiKeyInputModal').value.trim();
     if(key) {
@@ -343,7 +343,6 @@ window.openAddCustomerModal = (id = null) => {
         document.getElementById('cPhone').value = c.phone || ''; document.getElementById('cPrice').value = c.price || '';
         document.getElementById('cNotes').value = c.notes || ''; document.getElementById('cFreq').value = c.freq || '4'; 
         document.getElementById('cWeek').value = c.week || '1'; document.getElementById('cDay').value = c.day || 'Mon';
-        document.getElementById('briefingModal').classList.add('hidden');
     } else {
         titleEl.innerText = "Add Customer"; saveBtn.innerText = "SAVE"; deleteBtn.classList.add('hidden'); 
         document.getElementById('cName').value = ''; document.getElementById('cHouseNum').value = ''; document.getElementById('cStreet').value = '';
@@ -353,7 +352,6 @@ window.openAddCustomerModal = (id = null) => {
     }
     document.getElementById('addCustomerModal').classList.remove('hidden'); 
 };
-window.closeAddCustomerModal = () => { window.closeAllModals(); };
 
 window.saveCustomer = () => {
     triggerHaptic();
@@ -509,15 +507,19 @@ window.renderWeek = () => {
         const bg = document.createElement('div'); bg.className = 'swipe-bg'; bg.innerHTML = `<div class="action-left">✅</div><div class="action-right">💰</div>`;
         const fg = document.createElement('div'); fg.className = `swipe-fg CST-card-item ${c.skipped ? 'skipped-card' : ''}`;
         
-        fg.innerHTML = `<div style="flex:1;"><strong style="font-size:20px; display:block;">${window.escapeHTML(c.name)}</strong><small style="color:var(--accent); font-weight:800; display:block;">${window.escapeHTML(c.houseNum)} ${window.escapeHTML(c.street)}</small><div class="CST-card-badges">${cleanBadge} ${arrearsBadge} ${skipBadge}</div></div><div style="display:flex; align-items:center; gap: 8px;"><span class="price-text" style="font-weight:950; font-size:22px;">£${(parseFloat(c.price)||0).toFixed(2)}</span><button class="quick-action-btn" onclick="cmdQuickRoute('${c.id}', event)">📍</button><button class="quick-action-btn" onclick="cmdQuickCall('${window.escapeHTML(c.phone)}', event)">📞</button><div class="drag-handle">≡</div></div>`;
+        fg.innerHTML = `<div style="flex:1;"><strong style="font-size:20px; display:block;">${window.escapeHTML(c.name)}</strong><small style="color:var(--accent); font-weight:800; display:block;">${window.escapeHTML(c.houseNum)} ${window.escapeHTML(c.street)}</small><div class="CST-card-badges">${cleanBadge} ${arrearsBadge} ${skipBadge}</div></div><div style="display:flex; align-items:center; gap: 8px;"><span class="price-text" style="font-weight:950; font-size:22px;">£${(parseFloat(c.price)||0).toFixed(2)}</span><button class="quick-action-btn" onclick="window.cmdQuickRoute('${c.id}', event)">📍</button><button class="quick-action-btn" onclick="window.cmdQuickCall('${window.escapeHTML(c.phone)}', event)">📞</button><div class="drag-handle">≡</div></div>`;
         
         wrap.appendChild(bg); wrap.appendChild(fg); list.appendChild(wrap); attachSwipeGestures(wrap, fg, c.id); attachDragDrop(wrap, list);
     });
 };
 
-window.cmdQuickCall = (phone, e) => { e.stopPropagation(); triggerHaptic(); if(!phone || phone==='undefined') return window.showToast("No phone number saved.", "error"); window.location.href = `tel:${window.escapeHTML(phone)}`; };
+window.cmdQuickCall = (phone, e) => { 
+    e.stopPropagation(); triggerHaptic(); 
+    if(!phone || phone==='undefined') return window.showToast("No phone number saved.", "error"); 
+    window.location.href = `tel:${window.escapeHTML(phone)}`; 
+};
 
-// ✨ FIXED: Multi-stop routing accurately using Current Location
+// ✨ FIXED: Multi-stop routing using Google Maps standard URL ✨
 window.routeMyDay = () => {
     triggerHaptic();
     let jobs = db.customers.filter(c => String(c.week).trim() === String(curWeek).trim() && String(c.day).trim() === String(workingDay).trim() && !c.skipped && !c.cleaned).sort((a,b) => (a.order||0) - (b.order||0)).slice(0, 10); 
@@ -532,9 +534,9 @@ window.routeMyDay = () => {
     window.open(url, '_blank');
 };
 
-// ✨ FIXED: Single-stop routing accurately using Current Location
+// ✨ FIXED: Single-stop routing using Google Maps standard URL ✨
 window.cmdQuickRoute = (id, e) => { 
-    e.stopPropagation(); 
+    if(e) e.stopPropagation(); 
     triggerHaptic(); 
     const c = db.customers.find(x => x.id === id); 
     if(!c) return; 
@@ -642,7 +644,16 @@ const generateHistoryHtml = (id, phone) => {
     return history.map(h => `<div class="CMD-history-row" style="align-items:center;"><div><span>${window.escapeHTML(h.date)}</span> <span style="opacity:0.5; font-size:10px; margin-left:5px;">${h.method === 'Bank' ? '🏦' : '💵'}</span></div><div style="display:flex; gap:10px; align-items:center;"><span style="color:var(--success);">£${parseFloat(h.amt).toFixed(2)}</span><button class="quick-action-btn" style="width:28px; height:28px; font-size:12px; margin-left:0;" onclick="window.cmdReceiptWA('${window.escapeHTML(phone)}', '${h.amt}', '${window.escapeHTML(h.date)}')">🧾</button></div></div>`).join('');
 };
 
-window.cmdSettlePaid = (id, context) => { currentPayId = id; currentPayContext = context; const c = db.customers.find(x => x.id === id); const arr = window.getArrearsData(c); document.getElementById('pay-name').innerText = c.name; document.getElementById('pay-arrears-box').innerText = `TOTAL OUTSTANDING: £${arr.total.toFixed(2)}`; document.getElementById('paymentModal').classList.remove('hidden'); };
+window.cmdSettlePaid = (id, context) => { 
+    currentPayId = id; 
+    currentPayContext = context; 
+    const c = db.customers.find(x => x.id === id); 
+    const arr = window.getArrearsData(c); 
+    document.getElementById('pay-name').innerText = c.name; 
+    document.getElementById('pay-arrears-box').innerText = `TOTAL OUTSTANDING: £${arr.total.toFixed(2)}`; 
+    window.closeAllModals(); 
+    document.getElementById('paymentModal').classList.remove('hidden'); 
+};
 
 window.processPayment = (type) => { 
     const c = db.customers.find(x => x.id === currentPayId);
@@ -650,14 +661,16 @@ window.processPayment = (type) => {
     if(isNaN(amt) || amt <= 0) return window.showToast("Enter a valid amount", "error");
     c.paidThisMonth += amt;
     db.history.push({ custId: currentPayId, amt, date: new Date().toLocaleDateString('en-GB'), method: currentPayMethod });
-    window.saveData(); window.renderAllSafe(); window.closeAllModals(); window.showToast(`£${amt} Collected!`, "success");
+    window.saveData(); 
+    window.renderAllSafe(); 
+    window.closeAllModals(); 
+    window.showToast(`£${amt} Collected!`, "success");
 };
 
 window.showJobBriefing = async (id) => {
     triggerHaptic(); const c = db.customers.find(x => x.id === id); if(!c) return;
     const container = document.getElementById('briefingData'); const arrData = window.getArrearsData(c);
     
-    // Safety dest extraction
     const dest = encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`); 
     const navUrl = `https://www.google.com/maps/dir/?api=1&origin=Current+Location&destination=${dest}`;
     
@@ -765,7 +778,7 @@ window.cmdGenerateTaxPDF = () => {
             <div style="display:flex; justify-content:space-between; padding:10px 0;"><strong>Total Expenses</strong><strong style="color:#ff453a;">-£${totalSpend.toFixed(2)}</strong></div>
             <hr style="border: 1px solid #eee; margin: 30px 0;">
             <p style="text-align: right; font-size: 26px; color: #34C759;"><strong>Net Profit: £${(totalIncome - totalSpend).toFixed(2)}</strong></p>
-            <p style="font-size: 12px; color: #999; text-align: center; margin-top:50px;">Generated by Ultimate Hydro Pro.</p>
+            <p style="font-size: 12px; color: #999; text-align: center; margin-top:50px;">Generated by Ultimate Hydro Pro. Keep for your self-assessment records.</p>
         </div>
     `;
     window.print();
@@ -803,12 +816,12 @@ window.cmdGenerateMTD = () => {
 };
 
 window.openExpenseModal = () => { triggerHaptic(); document.getElementById('mExpDesc').value = ''; document.getElementById('mExpAmt').value = ''; document.getElementById('mExpCat').value = 'Fuel'; document.getElementById('expenseModal').classList.remove('hidden'); };
-window.closeExpenseModal = () => { document.getElementById('expenseModal').classList.add('hidden'); };
+window.closeExpenseModal = () => { window.closeAllModals(); };
 
 window.addFinanceExpense = () => { 
     triggerHaptic(); const desc = document.getElementById('mExpDesc').value.trim(); const amt = parseFloat(document.getElementById('mExpAmt').value); const cat = document.getElementById('mExpCat').value;
     if(!desc || isNaN(amt) || amt <= 0) return window.showToast("Description and Amount required", "error");
-    db.expenses.push({ id: Date.now(), desc, amt, cat, date: new Date().toLocaleDateString('en-GB') }); window.saveData(); window.closeExpenseModal();
+    db.expenses.push({ id: Date.now(), desc, amt, cat, date: new Date().toLocaleDateString('en-GB') }); window.saveData(); window.closeAllModals();
     window.openTab('finances-root', 'nav-fin-btn'); window.showToast("Expense Logged", "success");
 };
 
