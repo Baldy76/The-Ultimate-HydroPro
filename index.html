@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v5.0</title>
+    <title>Ultimate Hydro Pro v4.6</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=50">
+    <link rel="stylesheet" href="styles.css?v=46">
 </head>
 <body class="light-mode">
 
@@ -195,12 +195,6 @@
             </div>
             
             <div class="ADM-util-vault">
-                <div class="ADM-card" style="border: 2px solid var(--success); text-align: center; margin: 0 0 20px; box-shadow: none!important;">
-                    <h3 class="ADM-hdr" style="color: var(--success); margin-bottom: 5px;">Auto-Cycle Engine</h3>
-                    <p style="font-size: 11px; font-weight: 800; opacity: 0.7; margin: 0 0 10px;">Automatically handles customer cycles and arrears.</p>
-                    <div style="font-size: 13px; color: var(--success); font-weight: 900;">✅ STATUS: ACTIVE</div>
-                </div>
-
                 <h3 class="ADM-hdr" style="text-align: left; margin: 0 0 10px;">Accounting Sync</h3>
                 <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0; margin-bottom: 20px;">
                     <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#2ca01c; box-shadow:0 5px 15px rgba(44,160,28,0.2);" onclick="exportToQuickBooks()">QuickBooks</button>
@@ -213,9 +207,9 @@
                     <button class="ADM-util-btn grey" style="flex: 1; width: auto!important; height: 70px!important; margin: 0;" onclick="document.getElementById('importFile').click()">📥 Restore App</button>
                     <input type="file" id="importFile" hidden onchange="importData(event)" accept=".json">
                 </div>
-                
+                <button class="ADM-util-btn green" onclick="cmdCycleMonth()">🚀 START NEW MONTH</button>
                 <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v5.0</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v4.6</footer>
             </div>
         </section>
 
@@ -266,7 +260,7 @@
                 </select>
             </div>
             <div class="ADM-row"><span>🛒</span><input type="text" id="mExpDesc" placeholder="What did you buy?"></div>
-            <div class="ADM-row"><span>💸</span><input type="text" inputmode="decimal" pattern="[0-9\.]*" id="mExpAmt" placeholder="Amount £"></div>
+            <div class="ADM-row"><span>💸</span><input type="number" id="mExpAmt" placeholder="Amount £"></div>
             <button class="ADM-save-btn" style="margin-top:25px;" onclick="addFinanceExpense()">SAVE EXPENSE</button>
         </div>
     </div>
@@ -279,9 +273,11 @@
             <div class="ADM-row"><span>👤</span><input type="text" id="cName" placeholder="Full Name"></div>
             <div class="ADM-row"><span>🏠</span><input type="text" id="cHouseNum" placeholder="House No."></div>
             <div class="ADM-row"><span>🛣️</span><input type="text" id="cStreet" placeholder="Street Name"></div>
+            
             <div class="ADM-row"><span>📍</span><input type="text" id="cPostcode" placeholder="Postcode" oninput="this.value = this.value.toUpperCase()"></div>
+            
             <div class="ADM-row"><span>📞</span><input type="tel" id="cPhone" placeholder="Phone Number"></div>
-            <div class="ADM-row"><span>💰</span><input type="text" inputmode="decimal" pattern="[0-9\.]*" id="cPrice" placeholder="Price £"></div>
+            <div class="ADM-row"><span>💰</span><input type="number" id="cPrice" placeholder="Price £"></div>
             <div class="ADM-row">
                 <span>🔄</span>
                 <select id="cFreq"><option value="4">4 Weekly</option><option value="8">8 Weekly</option><option value="12">12 Weekly</option></select>
@@ -332,7 +328,7 @@
                 <div style="font-size: 11px; font-weight: 900; opacity: 0.5; text-transform: uppercase; margin-bottom: 10px; text-align: center;">Or Enter Custom Amount</div>
                 <div class="ADM-row" style="border: none; height: 60px!important; margin-bottom: 15px; justify-content: center;">
                     <span style="font-size: 26px; font-weight: 900; color: var(--text); width: auto;">£</span>
-                    <input type="text" inputmode="decimal" pattern="[0-9\.]*" id="pay-custom-amt" placeholder="0.00" style="font-size: 32px; font-weight: 950; text-align: center; color: var(--text); width: 120px; flex: none;">
+                    <input type="number" id="pay-custom-amt" placeholder="0.00" style="font-size: 32px; font-weight: 950; text-align: center; color: var(--text); width: 120px; flex: none;">
                 </div>
                 <button class="ADM-save-btn" style="height: 60px!important; font-size: 16px; margin-top: 0; background: var(--text); color: var(--bg);" onclick="processPayment('custom')">APPLY PARTIAL PAYMENT</button>
             </div>
@@ -367,6 +363,6 @@
 
     <div id="print-area"></div>
 
-    <script src="app.js?v=50" defer></script>
+    <script src="app.js?v=46" defer></script>
 </body>
 </html>
