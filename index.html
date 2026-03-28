@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v5.4</title>
+    <title>Ultimate Hydro Pro v5.5</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=54">
+    <link rel="stylesheet" href="styles.css?v=5.5">
 </head>
 <body class="light-mode">
 
@@ -33,7 +33,7 @@
                 <p style="margin:0; opacity:0.5; font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:1px;" id="home-date">LOADING DATE...</p>
                 <h2 id="home-greeting" style="margin:0; font-size:32px; font-weight:950; letter-spacing:-1px;">Good Morning.</h2>
             </div>
-            <div id="home-weather-pill" class="ADM-card" style="margin: 0 20px 20px; padding: 15px 20px; display:flex; align-items:center; gap: 15px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.03)!important;" onclick="openTab('weather-root', 'nav-wth-btn')">
+            <div id="home-weather-pill" class="ADM-card" style="margin: 0 20px 20px; padding: 15px 20px; display:flex; align-items:center; gap: 15px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.03)!important;" onclick="window.openTab('weather-root', 'nav-wth-btn')">
                 <span style="font-size: 30px;" id="hw-icon">🌤️</span>
                 <div style="flex:1;">
                     <strong style="font-size: 18px; display:block;" id="hw-temp">--°C</strong>
@@ -45,7 +45,7 @@
                 <small style="opacity:0.5; font-weight:900; text-transform:uppercase; letter-spacing:1px;">Today's Route Pipeline</small>
                 <div id="home-jobs-value" style="font-size: 45px; font-weight: 950; color: var(--success); line-height: 1.1; margin-top: 5px;">£0.00</div>
                 <div id="home-jobs-count" style="font-weight: 800; opacity: 0.7; margin-bottom: 20px; font-size: 15px;">0 Jobs Scheduled</div>
-                <button class="ADM-save-btn" style="margin-top: 0; height: 60px!important; box-shadow: 0 10px 25px rgba(52, 199, 89, 0.25); background: var(--success);" onclick="openTab('week-view-root', 'nav-route-btn')">🚀 START ROUTE</button>
+                <button class="ADM-save-btn" style="margin-top: 0; height: 60px!important; box-shadow: 0 10px 25px rgba(52, 199, 89, 0.25); background: var(--success);" onclick="window.openTab('week-view-root', 'nav-route-btn')">🚀 START ROUTE</button>
             </div>
             <div class="FIN-bubble-row" style="margin-bottom: 20px;">
                 <div class="FIN-bubble" style="flex-direction:column; align-items:flex-start;">
@@ -60,35 +60,35 @@
             <div style="padding: 0 20px 30px;">
                 <h3 class="ADM-hdr" style="text-align: left; margin-bottom: 10px; padding-left: 5px;">Quick Actions</h3>
                 <div style="display:flex; gap:15px; width: 100%;">
-                    <button class="ADM-util-btn blue" style="flex: 1; width: auto!important; height: 60px!important; border-radius: 20px; font-size: 14px;" onclick="openAddCustomerModal()">➕ Add Cust</button>
-                    <button class="ADM-util-btn grey" style="flex: 1; width: auto!important; height: 60px!important; border-radius: 20px; font-size: 14px;" onclick="openExpenseModal()">🛒 Log Exp</button>
+                    <button class="ADM-util-btn blue" style="flex: 1; width: auto!important; height: 60px!important; border-radius: 20px; font-size: 14px;" onclick="window.openAddCustomerModal()">➕ Add Cust</button>
+                    <button class="ADM-util-btn grey" style="flex: 1; width: auto!important; height: 60px!important; border-radius: 20px; font-size: 14px;" onclick="window.openExpenseModal()">🛒 Log Exp</button>
                 </div>
             </div>
-            <button class="ai-floating-btn ai-glow-btn" onclick="triggerAI('voice')">
+            <button class="ai-floating-btn ai-glow-btn" onclick="window.triggerAI('voice')">
                 <span style="font-size: 18px;">🎤</span> Tap to Speak to Hydro AI
             </button>
         </section>
         
         <section id="week-view-root" class="tab-content" data-title="Route">
             <div class="theme-segmented-control" style="margin: 5px auto 15px; width: calc(100% - 40px); border-radius: 20px; height: 45px;">
-                <button id="wk-btn-1" class="segment active" onclick="setWorkingWeek(1)">W1</button>
-                <button id="wk-btn-2" class="segment" onclick="setWorkingWeek(2)">W2</button>
-                <button id="wk-btn-3" class="segment" onclick="setWorkingWeek(3)">W3</button>
-                <button id="wk-btn-4" class="segment" onclick="setWorkingWeek(4)">W4</button>
-                <button id="wk-btn-5" class="segment" onclick="setWorkingWeek(5)">W5</button>
+                <button id="wk-btn-1" class="segment active" onclick="window.setWorkingWeek(1)">W1</button>
+                <button id="wk-btn-2" class="segment" onclick="window.setWorkingWeek(2)">W2</button>
+                <button id="wk-btn-3" class="segment" onclick="window.setWorkingWeek(3)">W3</button>
+                <button id="wk-btn-4" class="segment" onclick="window.setWorkingWeek(4)">W4</button>
+                <button id="wk-btn-5" class="segment" onclick="window.setWorkingWeek(5)">W5</button>
             </div>
             <div class="WEE-day-selector" style="margin: 0 auto 20px; padding-bottom: 0; width: calc(100% - 40px);">
-                <button class="WEE-day-btn active" id="day-Mon" onclick="setWorkingDay('Mon', this)">M</button>
-                <button class="WEE-day-btn" id="day-Tue" onclick="setWorkingDay('Tue', this)">T</button>
-                <button class="WEE-day-btn" id="day-Wed" onclick="setWorkingDay('Wed', this)">W</button>
-                <button class="WEE-day-btn" id="day-Thu" onclick="setWorkingDay('Thu', this)">T</button>
-                <button class="WEE-day-btn" id="day-Fri" onclick="setWorkingDay('Fri', this)">F</button>
-                <button class="WEE-day-btn" id="day-Sat" onclick="setWorkingDay('Sat', this)">S</button>
-                <button class="WEE-day-btn" id="day-Sun" onclick="setWorkingDay('Sun', this)">S</button>
+                <button class="WEE-day-btn active" id="day-Mon" onclick="window.setWorkingDay('Mon', this)">M</button>
+                <button class="WEE-day-btn" id="day-Tue" onclick="window.setWorkingDay('Tue', this)">T</button>
+                <button class="WEE-day-btn" id="day-Wed" onclick="window.setWorkingDay('Wed', this)">W</button>
+                <button class="WEE-day-btn" id="day-Thu" onclick="window.setWorkingDay('Thu', this)">T</button>
+                <button class="WEE-day-btn" id="day-Fri" onclick="window.setWorkingDay('Fri', this)">F</button>
+                <button class="WEE-day-btn" id="day-Sat" onclick="window.setWorkingDay('Sat', this)">S</button>
+                <button class="WEE-day-btn" id="day-Sun" onclick="window.setWorkingDay('Sun', this)">S</button>
             </div>
             <div style="display:flex; gap:10px; margin: 0 20px 10px; width: calc(100% - 40px);">
-                <button class="ADM-save-btn" style="margin:0; flex: 2; width: auto!important; background: var(--text); color: var(--bg);" onclick="routeMyDay()">📍 MAP ROUTE</button>
-                <button class="ADM-save-btn" style="margin:0; flex: 1; width: auto!important; background: transparent; border: 2px solid var(--accent); color: var(--accent); box-shadow: none; font-size:13px;" onclick="openTomorrowModal()">🔮 TMRW</button>
+                <button class="ADM-save-btn" style="margin:0; flex: 2; width: auto!important; background: var(--text); color: var(--bg);" onclick="window.routeMyDay()">📍 MAP ROUTE</button>
+                <button class="ADM-save-btn" style="margin:0; flex: 1; width: auto!important; background: transparent; border: 2px solid var(--accent); color: var(--accent); box-shadow: none; font-size:13px;" onclick="window.openTomorrowModal()">🔮 TMRW</button>
             </div>
             <div id="WEE-progress-dashboard"></div>
             <div id="WEE-list-container"></div>
@@ -96,12 +96,12 @@
 
         <section id="master-root" class="tab-content" data-title="Customers">
             <div style="padding: 0 25px 15px; width: 100%; max-width: 400px; margin: 0 auto;">
-                <button class="ADM-save-btn" style="margin-top: 0; margin-bottom: 5px; box-shadow: 0 10px 25px rgba(0,122,255,0.2);" onclick="openAddCustomerModal()">➕ ADD NEW CUSTOMER</button>
+                <button class="ADM-save-btn" style="margin-top: 0; margin-bottom: 5px; box-shadow: 0 10px 25px rgba(0,122,255,0.2);" onclick="window.openAddCustomerModal()">➕ ADD NEW CUSTOMER</button>
             </div>
             <div class="CST-search-vault">
-                <input type="text" id="mainSearch" placeholder="🔍 Search Name, Street, or Phone..." oninput="renderMaster()">
+                <input type="text" id="mainSearch" placeholder="🔍 Search Name, Street, or Phone..." oninput="window.renderMaster()">
                 <div style="display: flex; justify-content: center; margin-top: 15px; width: 100%;">
-                    <button id="arrearsFilterBtn" class="CST-filter-btn" onclick="toggleArrearsFilter()">⚠️ SHOW ARREARS ONLY</button>
+                    <button id="arrearsFilterBtn" class="CST-filter-btn" onclick="window.toggleArrearsFilter()">⚠️ SHOW ARREARS ONLY</button>
                 </div>
             </div>
             <div id="CST-list-container"></div>
@@ -126,8 +126,8 @@
             </div>
             
             <h3 class="ADM-hdr" style="text-align: left; padding-left: 25px; margin-bottom: 10px;">Log Expense</h3>
-            <button class="ADM-save-btn ai-glow-btn" style="margin: 0 20px 10px; width: calc(100% - 40px); font-size: 14px; height: 60px!important;" onclick="triggerAI('receipt')">📸 Auto-Scan Receipt with AI ✨</button>
-            <button class="ADM-save-btn" style="margin: 0 20px 20px; width: calc(100% - 40px); background: var(--card); color: var(--text); border: 2px dashed var(--ios-grey); box-shadow: none;" onclick="openExpenseModal()">➕ LOG MANUAL EXPENSE</button>
+            <button class="ADM-save-btn ai-glow-btn" style="margin: 0 20px 10px; width: calc(100% - 40px); font-size: 14px; height: 60px!important;" onclick="window.triggerAI('receipt')">📸 Auto-Scan Receipt with AI ✨</button>
+            <button class="ADM-save-btn" style="margin: 0 20px 20px; width: calc(100% - 40px); background: var(--card); color: var(--text); border: 2px dashed var(--ios-grey); box-shadow: none;" onclick="window.openExpenseModal()">➕ LOG MANUAL EXPENSE</button>
             
             <h3 class="ADM-hdr" style="text-align: left; padding-left: 25px; margin-top: 30px; margin-bottom: 15px;">Recent Transactions</h3>
             <div id="FIN-ledger-list"></div>
@@ -140,8 +140,8 @@
                 <div style="border-bottom: 2px solid var(--ios-grey); padding-bottom: 20px; margin-bottom: 15px;">
                     <span style="font-size: 16px; font-weight: 800; color: var(--text); display: block; text-align: center;">Theme Selection</span>
                     <div class="theme-segmented-control">
-                        <button id="btnLight" class="segment active" onclick="setThemeMode(false)">☀️ Light</button>
-                        <button id="btnDark" class="segment" onclick="setThemeMode(true)">🌙 Dark</button>
+                        <button id="btnLight" class="segment active" onclick="window.setThemeMode(false)">☀️ Light</button>
+                        <button id="btnDark" class="segment" onclick="window.setThemeMode(true)">🌙 Dark</button>
                     </div>
                 </div>
                 <button class="ADM-save-btn" style="margin-top: 0; background: transparent; border: 3px solid var(--accent); color: var(--accent); box-shadow: none;" onclick="location.reload(true)">🔄 SYNC APP UPDATES</button>
@@ -169,29 +169,29 @@
                         </select>
                     </div>
                     <div style="display: flex; align-items: flex-end; flex: 1;">
-                        <button class="ADM-save-btn" style="margin:0; width: 100%; height: 45px!important; font-size: 12px; background: var(--card); color: var(--text); border: 2px solid var(--ios-grey); box-shadow: none;" onclick="cmdGenerateMTD()">📊 MTD CSV</button>
+                        <button class="ADM-save-btn" style="margin:0; width: 100%; height: 45px!important; font-size: 12px; background: var(--card); color: var(--text); border: 2px solid var(--ios-grey); box-shadow: none;" onclick="window.cmdGenerateMTD()">📊 MTD CSV</button>
                     </div>
                 </div>
-                <button class="ADM-save-btn" style="margin-top:0; background: var(--accent); box-shadow: 0 8px 20px rgba(0, 122, 255, 0.25);" onclick="cmdGenerateTaxPDF()">📄 ANNUAL TAX PDF</button>
+                <button class="ADM-save-btn" style="margin-top:0; background: var(--accent); box-shadow: 0 8px 20px rgba(0, 122, 255, 0.25);" onclick="window.cmdGenerateTaxPDF()">📄 ANNUAL TAX PDF</button>
             </div>
 
             <div class="ADM-card" style="border: 2px solid #8a2be2;">
                 <h3 class="ADM-hdr" style="color: #8a2be2; font-weight: 950;">🧠 The AI Vault</h3>
                 <div class="ADM-row"><span>🔑</span><input type="password" id="sAIKey" placeholder="Paste API Key here..."></div>
-                <button class="ADM-save-btn ai-glow-btn" style="height: 50px!important; font-size: 14px;" onclick="saveSettingsAIKey()">SECURE AI KEY ✨</button>
+                <button class="ADM-save-btn ai-glow-btn" style="height: 50px!important; font-size: 14px;" onclick="window.saveSettingsAIKey()">SECURE AI KEY ✨</button>
             </div>
 
             <div class="ADM-card" style="border: 2px dashed #ff9500;">
                 <h3 class="ADM-hdr" style="color: #ff9500; font-weight: 950;">Emergency Data Recovery</h3>
                 <p style="font-size: 12px; font-weight: 600; opacity: 0.6; text-align: center; margin: 0 0 15px;">Lost your customers after a cache clear? Tap below to run a deep scan of your phone's memory.</p>
-                <button class="ADM-save-btn" style="margin-top:0; height: 50px!important; font-size: 14px; background: #ff9500; box-shadow: 0 8px 20px rgba(255, 149, 0, 0.25);" onclick="runDeepScanRecovery()">🛟 RUN DEEP SCAN</button>
+                <button class="ADM-save-btn" style="margin-top:0; height: 50px!important; font-size: 14px; background: #ff9500; box-shadow: 0 8px 20px rgba(255, 149, 0, 0.25);" onclick="window.runDeepScanRecovery()">🛟 RUN DEEP SCAN</button>
             </div>
 
             <div class="ADM-card">
                 <h3 class="ADM-hdr">Bank Vault</h3>
                 <div class="ADM-row"><span>🏦</span><input type="text" id="bName" placeholder="Account Name"></div>
                 <div class="ADM-row"><span>💳</span><input type="text" id="bAcc" placeholder="Account No."></div>
-                <button class="ADM-save-btn" style="background:var(--accent);" onclick="saveBank()">🔒 SECURE BANK</button>
+                <button class="ADM-save-btn" style="background:var(--accent);" onclick="window.saveBank()">🔒 SECURE BANK</button>
             </div>
             
             <div class="ADM-util-vault">
@@ -203,38 +203,38 @@
 
                 <h3 class="ADM-hdr" style="text-align: left; margin: 0 0 10px;">Accounting Sync</h3>
                 <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0; margin-bottom: 20px;">
-                    <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#2ca01c; box-shadow:0 5px 15px rgba(44,160,28,0.2);" onclick="exportToQuickBooks()">QuickBooks</button>
-                    <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#13b5ea; box-shadow:0 5px 15px rgba(19,181,234,0.2);" onclick="exportToXero()">Xero</button>
-                    <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#00d639; color:#000; box-shadow:0 5px 15px rgba(0,214,57,0.2);" onclick="exportToSage()">Sage</button>
-                    <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#00b2a9; box-shadow:0 5px 15px rgba(0,178,169,0.2);" onclick="exportToFreeAgent()">FreeAgent</button>
+                    <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#2ca01c; box-shadow:0 5px 15px rgba(44,160,28,0.2);" onclick="window.exportToQuickBooks()">QuickBooks</button>
+                    <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#13b5ea; box-shadow:0 5px 15px rgba(19,181,234,0.2);" onclick="window.exportToXero()">Xero</button>
+                    <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#00d639; color:#000; box-shadow:0 5px 15px rgba(0,214,57,0.2);" onclick="window.exportToSage()">Sage</button>
+                    <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#00b2a9; box-shadow:0 5px 15px rgba(0,178,169,0.2);" onclick="window.exportToFreeAgent()">FreeAgent</button>
                 </div>
                 <div style="display: flex; gap: 15px; width: 100%; margin-bottom: 15px;">
-                    <button class="ADM-util-btn grey" style="flex: 1; width: auto!important; height: 70px!important; margin: 0;" onclick="exportData()">📤 Backup App Data</button>
+                    <button class="ADM-util-btn grey" style="flex: 1; width: auto!important; height: 70px!important; margin: 0;" onclick="window.exportData()">📤 Backup App Data</button>
                     <button class="ADM-util-btn grey" style="flex: 1; width: auto!important; height: 70px!important; margin: 0;" onclick="document.getElementById('importFile').click()">📥 Restore App</button>
-                    <input type="file" id="importFile" hidden onchange="importData(event)" accept=".json">
+                    <input type="file" id="importFile" hidden onchange="window.importData(event)" accept=".json">
                 </div>
                 
-                <button class="ADM-util-btn red" onclick="cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v5.4</footer>
+                <button class="ADM-util-btn red" onclick="window.cmdNuclear()">☢️ FACTORY RESET</button>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v5.5</footer>
             </div>
         </section>
 
     </main>
 
     <nav id="BOTTOM-NAV">
-        <button id="nav-route-btn" class="nav-item" onclick="openTab('week-view-root', 'nav-route-btn')"><span class="nav-icon">📍</span><small>Route</small></button>
-        <button id="nav-cust-btn" class="nav-item" onclick="openTab('master-root', 'nav-cust-btn')"><span class="nav-icon">👥</span><small>Custs</small></button>
-        <div class="nav-fab-wrapper"><button id="nav-home-btn" class="home-fab active" onclick="openTab('home-root', 'nav-home-btn')">🏠</button></div>
-        <button id="nav-fin-btn" class="nav-item" onclick="openTab('finances-root', 'nav-fin-btn')"><span class="nav-icon">💰</span><small>Finance</small></button>
-        <button id="nav-set-btn" class="nav-item" onclick="openTab('admin-root', 'nav-set-btn')"><span class="nav-icon">⚙️</span><small>Settings</small></button>
+        <button id="nav-route-btn" class="nav-item" onclick="window.openTab('week-view-root', 'nav-route-btn')"><span class="nav-icon">📍</span><small>Route</small></button>
+        <button id="nav-cust-btn" class="nav-item" onclick="window.openTab('master-root', 'nav-cust-btn')"><span class="nav-icon">👥</span><small>Custs</small></button>
+        <div class="nav-fab-wrapper"><button id="nav-home-btn" class="home-fab active" onclick="window.openTab('home-root', 'nav-home-btn')">🏠</button></div>
+        <button id="nav-fin-btn" class="nav-item" onclick="window.openTab('finances-root', 'nav-fin-btn')"><span class="nav-icon">💰</span><small>Finance</small></button>
+        <button id="nav-set-btn" class="nav-item" onclick="window.openTab('admin-root', 'nav-set-btn')"><span class="nav-icon">⚙️</span><small>Settings</small></button>
     </nav>
 
-    <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden onchange="handlePhotoUpload(event)">
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden onchange="window.handlePhotoUpload(event)">
 
-    <div id="aiTeaserModal" class="modal-overlay hidden" onclick="closeAllModals()">
+    <div id="aiTeaserModal" class="modal-overlay hidden" onclick="window.closeAllModals()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
-            <button class="close-x-btn" onclick="closeAllModals()">✕</button>
+            <button class="close-x-btn" onclick="window.closeAllModals()">✕</button>
             <div class="CMD-header" style="text-align:center; border:none; padding-bottom: 0;">
                 <div style="font-size: 50px; margin-bottom: 5px;">✨</div>
                 <h2 style="font-size: 26px; padding:0;">Wake up Hydro AI</h2>
@@ -246,14 +246,14 @@
                 <div style="font-size: 12px; font-weight: 900; color: #8a2be2; text-transform: uppercase; margin-bottom: 5px;">API Key Required</div>
                 <input type="password" id="aiKeyInputModal" placeholder="sk-proj-..." style="width: 100%; height: 40px; border-radius: 10px; border: none; padding: 0 10px; font-size: 14px; font-weight: 700; outline: none; font-family: 'Plus Jakarta Sans', sans-serif;">
             </div>
-            <button class="ADM-save-btn ai-glow-btn" style="margin-top:0;" onclick="saveModalAIKey()">ACTIVATE AI ENGINE</button>
+            <button class="ADM-save-btn ai-glow-btn" style="margin-top:0;" onclick="window.saveModalAIKey()">ACTIVATE AI ENGINE</button>
         </div>
     </div>
 
-    <div id="expenseModal" class="modal-overlay hidden" onclick="closeAllModals()">
+    <div id="expenseModal" class="modal-overlay hidden" onclick="window.closeAllModals()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
-            <button class="close-x-btn" onclick="closeAllModals()">✕</button>
+            <button class="close-x-btn" onclick="window.closeAllModals()">✕</button>
             <div class="CMD-header"><h2>Log Expense</h2></div>
             <div class="ADM-row">
                 <span>🏷️</span>
@@ -267,14 +267,14 @@
             </div>
             <div class="ADM-row"><span>🛒</span><input type="text" id="mExpDesc" placeholder="What did you buy?"></div>
             <div class="ADM-row"><span>💸</span><input type="text" inputmode="decimal" pattern="[0-9\.]*" id="mExpAmt" placeholder="Amount £"></div>
-            <button class="ADM-save-btn" style="margin-top:25px;" onclick="addFinanceExpense()">SAVE EXPENSE</button>
+            <button class="ADM-save-btn" style="margin-top:25px;" onclick="window.addFinanceExpense()">SAVE EXPENSE</button>
         </div>
     </div>
 
-    <div id="addCustomerModal" class="modal-overlay hidden" onclick="closeAllModals()">
+    <div id="addCustomerModal" class="modal-overlay hidden" onclick="window.closeAllModals()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
-            <button class="close-x-btn" onclick="closeAllModals()">✕</button>
+            <button class="close-x-btn" onclick="window.closeAllModals()">✕</button>
             <div class="CMD-header"><h2 id="customerModalTitle">Add Customer</h2></div>
             <div class="ADM-row"><span>👤</span><input type="text" id="cName" placeholder="Full Name"></div>
             <div class="ADM-row"><span>🏠</span><input type="text" id="cHouseNum" placeholder="House No."></div>
@@ -299,50 +299,50 @@
                 <textarea id="cNotes" placeholder="Additional Notes (e.g. Beware of dog...)" rows="3"></textarea>
             </div>
             <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
-                <button class="ADM-save-btn" style="margin-top:0; background: var(--ios-grey); color: var(--text); box-shadow: none;" onclick="closeAllModals()">CANCEL</button>
-                <button id="saveCustomerBtn" class="ADM-save-btn" style="margin-top:0;" onclick="saveCustomer()">SAVE</button>
+                <button class="ADM-save-btn" style="margin-top:0; background: var(--ios-grey); color: var(--text); box-shadow: none;" onclick="window.closeAllModals()">CANCEL</button>
+                <button id="saveCustomerBtn" class="ADM-save-btn" style="margin-top:0;" onclick="window.saveCustomer()">SAVE</button>
             </div>
-            <button id="deleteCustomerBtn" class="ADM-save-btn hidden" style="margin-top: 15px; background: transparent; border: 3px dashed var(--danger); color: var(--danger); box-shadow: none;" onclick="cmdDeleteCustomer()">🗑️ DELETE CUSTOMER</button>
+            <button id="deleteCustomerBtn" class="ADM-save-btn hidden" style="margin-top: 15px; background: transparent; border: 3px dashed var(--danger); color: var(--danger); box-shadow: none;" onclick="window.cmdDeleteCustomer()">🗑️ DELETE CUSTOMER</button>
         </div>
     </div>
 
-    <div id="briefingModal" class="modal-overlay hidden" onclick="closeAllModals()">
+    <div id="briefingModal" class="modal-overlay hidden" onclick="window.closeAllModals()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
-            <button class="close-x-btn" onclick="closeAllModals()">✕</button>
+            <button class="close-x-btn" onclick="window.closeAllModals()">✕</button>
             <div id="briefingData"></div>
         </div>
     </div>
 
-    <div id="paymentModal" class="modal-overlay hidden" onclick="closeAllModals()">
+    <div id="paymentModal" class="modal-overlay hidden" onclick="window.closeAllModals()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
-            <button class="close-x-btn" onclick="closeAllModals()">✕</button>
+            <button class="close-x-btn" onclick="window.closeAllModals()">✕</button>
             <div class="theme-segmented-control" style="margin-bottom: 20px;">
-                <button id="btnPayCash" class="segment active" onclick="setPayMethod('Cash')">💵 Cash</button>
-                <button id="btnPayBank" class="segment" onclick="setPayMethod('Bank')">🏦 Bank Tx</button>
+                <button id="btnPayCash" class="segment active" onclick="window.setPayMethod('Cash')">💵 Cash</button>
+                <button id="btnPayBank" class="segment" onclick="window.setPayMethod('Bank')">🏦 Bank Tx</button>
             </div>
             <div class="CMD-header" style="border-bottom: none; text-align: center;">
                 <div class="CMD-header-sub" style="margin-bottom: 5px; color: var(--success);">SECURE CHECKOUT</div>
                 <h2 id="pay-name" style="font-size: 26px;">Customer Name</h2>
             </div>
             <div id="pay-arrears-box" class="CMD-alert-danger" style="margin-top: 0; cursor: default; transform: none;"></div>
-            <button id="pay-full-btn" class="ADM-save-btn" style="background: var(--success); margin-top: 5px; margin-bottom: 25px;" onclick="processPayment('full')">PAY IN FULL</button>
+            <button id="pay-full-btn" class="ADM-save-btn" style="background: var(--success); margin-top: 5px; margin-bottom: 25px;" onclick="window.processPayment('full')">PAY IN FULL</button>
             <div class="ADM-card" style="margin: 0; padding: 20px; border-radius: 25px; box-shadow: none!important; border: 2px solid var(--ios-grey);">
                 <div style="font-size: 11px; font-weight: 900; opacity: 0.5; text-transform: uppercase; margin-bottom: 10px; text-align: center;">Or Enter Custom Amount</div>
                 <div class="ADM-row" style="border: none; height: 60px!important; margin-bottom: 15px; justify-content: center;">
                     <span style="font-size: 26px; font-weight: 900; color: var(--text); width: auto;">£</span>
                     <input type="text" inputmode="decimal" pattern="[0-9\.]*" id="pay-custom-amt" placeholder="0.00" style="font-size: 32px; font-weight: 950; text-align: center; color: var(--text); width: 120px; flex: none;">
                 </div>
-                <button class="ADM-save-btn" style="height: 60px!important; font-size: 16px; margin-top: 0; background: var(--text); color: var(--bg);" onclick="processPayment('custom')">APPLY PARTIAL PAYMENT</button>
+                <button class="ADM-save-btn" style="height: 60px!important; font-size: 16px; margin-top: 0; background: var(--text); color: var(--bg);" onclick="window.processPayment('custom')">APPLY PARTIAL PAYMENT</button>
             </div>
         </div>
     </div>
 
-    <div id="tomorrowModal" class="modal-overlay hidden" onclick="closeAllModals()">
+    <div id="tomorrowModal" class="modal-overlay hidden" onclick="window.closeAllModals()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
-            <button class="close-x-btn" onclick="closeAllModals()">✕</button>
+            <button class="close-x-btn" onclick="window.closeAllModals()">✕</button>
             <div class="CMD-header">
                 <h2>Tomorrow's Route</h2>
                 <div class="CMD-header-sub" id="tomorrow-title-sub">Loading...</div>
@@ -352,14 +352,14 @@
         </div>
     </div>
 
-    <div id="confirmModal" class="modal-overlay hidden" onclick="closeAllModals()">
+    <div id="confirmModal" class="modal-overlay hidden" onclick="window.closeAllModals()">
         <div class="modal-content" onclick="event.stopPropagation()" style="text-align: center;">
-            <button class="close-x-btn" onclick="closeAllModals()">✕</button>
+            <button class="close-x-btn" onclick="window.closeAllModals()">✕</button>
             <div style="font-size: 40px; margin-bottom: 10px; margin-top: 15px;" id="confirmIcon">⚠️</div>
             <h2 style="margin: 0 0 10px; font-weight: 950;" id="confirmTitle">Are you sure?</h2>
             <p style="margin: 0 0 25px; opacity: 0.6; font-weight: 600; font-size: 16px;" id="confirmText">This action cannot be undone.</p>
             <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0;">
-                <button class="ADM-save-btn" style="margin-top:0; background: var(--ios-grey); color: var(--text); box-shadow: none;" onclick="closeAllModals()">CANCEL</button>
+                <button class="ADM-save-btn" style="margin-top:0; background: var(--ios-grey); color: var(--text); box-shadow: none;" onclick="window.closeAllModals()">CANCEL</button>
                 <button class="ADM-save-btn" id="confirmActionBtn" style="margin-top:0; background: var(--danger); box-shadow: 0 8px 20px rgba(255,69,58,0.25);">CONFIRM</button>
             </div>
         </div>
@@ -367,6 +367,6 @@
 
     <div id="print-area"></div>
 
-    <script src="app.js?v=5.4" defer></script>
+    <script src="app.js?v=5.5" defer></script>
 </body>
 </html>
