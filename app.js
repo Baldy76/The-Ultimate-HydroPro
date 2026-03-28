@@ -22,15 +22,12 @@ let showArrearsOnly = false;
 let editingCustomerId = null;
 let currentPayMethod = 'Cash'; 
 
-// ✨ UPGRADED: Dual-Vault IndexedDB (v2) for saving phone memory ✨
 const idb = {
     db: null,
     init: () => new Promise((resolve, reject) => {
-        const req = indexedDB.open('HydroPro_V5_DB', 2); 
+        const req = indexedDB.open('HydroPro_V3_DB', 1);
         req.onupgradeneeded = e => {
-            const database = e.target.result;
-            if (!database.objectStoreNames.contains('appData')) database.createObjectStore('appData');
-            if (!database.objectStoreNames.contains('photos')) database.createObjectStore('photos', { keyPath: 'id' });
+            e.target.result.createObjectStore('appData');
         };
         req.onsuccess = e => { idb.db = e.target.result; resolve(); };
         req.onerror = e => reject(e);
@@ -43,18 +40,6 @@ const idb = {
     set: (key, val) => new Promise(resolve => {
         const req = idb.db.transaction('appData', 'readwrite').objectStore('appData').put(val, key);
         req.onsuccess = () => resolve();
-    }),
-    savePhoto: (photoObj) => new Promise(resolve => {
-        const req = idb.db.transaction('photos', 'readwrite').objectStore('photos').put(photoObj);
-        req.onsuccess = () => resolve();
-    }),
-    getPhotos: (custId) => new Promise(resolve => {
-        const tx = idb.db.transaction('photos', 'readonly');
-        const req = tx.objectStore('photos').getAll();
-        req.onsuccess = () => {
-            const all = req.result || [];
-            resolve(all.filter(p => String(p.custId) === String(custId)));
-        };
     }),
     clear: () => new Promise(resolve => {
         const req = idb.db.transaction('appData', 'readwrite').objectStore('appData').clear();
@@ -80,9 +65,9 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// ✨ FIXED: 100% Syntax-safe HTML Escaping ✨
+// 100% Syntax-safe HTML Escaping
 const escapeHTML = (str) => {
-    if (!str && str !== 0) return '';
+    if (!str) return '';
     return String(str)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -100,44 +85,6 @@ window.getArrearsData = (c) => {
     if (currentOwed > 0.01) breakdown.push({ month: currentMonthStr, amt: currentOwed });
     const totalOwed = breakdown.reduce((sum, item) => sum + item.amt, 0);
     return { isOwed: totalOwed > 0.01, total: totalOwed, monthsString: breakdown.map(b => b.month).join(', '), breakdown: breakdown };
-};
-
-// ✨ NEW: The Auto-Cycle Engine ✨
-const runCycleEngine = () => {
-    const DAY_MS = 86400000;
-    let updated = false;
-    
-    db.customers.forEach(c => {
-        if (!c.cycleStartDate) {
-            c.cycleStartDate = Date.now();
-            updated = true;
-        }
-        
-        const freq = parseInt(c.freq) || 4;
-        const cycleLengthMS = freq * 7 * DAY_MS;
-        
-        // If the customer has passed their allotted weeks since cycle start
-        if (Date.now() - c.cycleStartDate >= cycleLengthMS) {
-            let price = c.cleaned ? (parseFloat(c.price) || 0) : 0;
-            let paid = parseFloat(c.paidThisMonth) || 0;
-            
-            // Log arrears if they didn't pay for the clean
-            if (paid < price) {
-                if (!c.pastArrears) c.pastArrears = [];
-                let monthName = new Date(c.cycleStartDate).toLocaleString('en-GB', { month: 'short', year: '2-digit' });
-                c.pastArrears.push({ month: monthName, amt: price - paid });
-            }
-            
-            // Reset for the new cycle
-            c.cleaned = false;
-            c.skipped = false;
-            c.paidThisMonth = 0;
-            c.cycleStartDate = Date.now();
-            updated = true;
-        }
-    });
-    
-    if (updated) idb.set('master_db', db);
 };
 
 let wthStartY = 0; let wthContainer = null; let ptrIndicator = null;
@@ -160,7 +107,7 @@ const initPTR = () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("Ultimate Hydro Pro v5.0 Booting...");
+    console.log("Ultimate Hydro Pro v4.6 Booting...");
     try {
         await idb.init(); 
         let savedData = await idb.get('master_db');
@@ -172,23 +119,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             db.customers = savedData.customers || []; db.expenses = savedData.expenses || [];
             db.history = savedData.history || []; db.bank = savedData.bank || { name: '', acc: '' };
         }
-
-        // Run the new automated cycle engine
-        runCycleEngine();
-
-        // 💣 Defuse the "Time-Bomb": Migrate old base64 photos to the secondary IDB Vault
-        let photosMigrated = false;
-        for (let c of db.customers) {
-            if (c.photos && c.photos.length > 0) {
-                for (let p of c.photos) {
-                    await idb.savePhoto({ id: p.id || Date.now() + Math.random(), custId: c.id, data: p.data, date: p.date });
-                }
-                delete c.photos; 
-                photosMigrated = true;
-            }
-        }
-        if (photosMigrated) await idb.set('master_db', db);
-
     } catch(err) { console.error("Boot Error:", err); }
 
     applyTheme(localStorage.getItem('HP_Theme') === 'true');
@@ -205,6 +135,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.segment').forEach(b => { if(b.id && b.id.startsWith('wk-btn-')) b.classList.remove('active'); });
     const activeWkBtn = document.getElementById(`wk-btn-${curWeek}`);
     if(activeWkBtn) activeWkBtn.classList.add('active');
+    
+    // Bind Confirm Button
+    const confirmBtn = document.getElementById('confirmActionBtn');
+    if(confirmBtn) {
+        confirmBtn.addEventListener('click', () => { if(confirmCallback) confirmCallback(); window.closeConfirmModal(); });
+    }
 
     renderAllSafe(); initWeather(); initPTR();
 
@@ -257,6 +193,7 @@ function applyTheme(isDark) {
 
 window.setThemeMode = (isDark) => { triggerHaptic(); applyTheme(isDark); localStorage.setItem('HP_Theme', isDark); if(document.getElementById('finances-root').classList.contains('active')) renderFinances(); };
 window.saveData = () => { idb.set('master_db', db); };
+
 window.openTab = (id, btnId = null) => {
     triggerHaptic(); document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     const target = document.getElementById(id);
@@ -360,22 +297,22 @@ window.saveCustomer = () => {
     const name = document.getElementById('cName').value.trim();
     if(!name) { showToast("Customer Name is required", "error"); return; }
     
-    const rawPrice = document.getElementById('cPrice').value.trim();
-    const parsedPrice = parseFloat(rawPrice); // handles 'inputmode="decimal"' safely
+    // Convert Postcode to Uppercase Safely
+    const rawPostcode = document.getElementById('cPostcode').value || '';
     
     const newDetails = {
         name, houseNum: document.getElementById('cHouseNum').value.trim(), street: document.getElementById('cStreet').value.trim(), 
-        postcode: document.getElementById('cPostcode').value.trim().toUpperCase(), phone: document.getElementById('cPhone').value.trim(), 
-        price: isNaN(parsedPrice) ? 0 : parsedPrice, notes: document.getElementById('cNotes').value.trim(), 
+        postcode: rawPostcode.trim().toUpperCase(), phone: document.getElementById('cPhone').value.trim(), 
+        price: parseFloat(document.getElementById('cPrice').value) || 0, notes: document.getElementById('cNotes').value.trim(), 
         freq: parseInt(document.getElementById('cFreq').value) || 4, week: document.getElementById('cWeek').value, day: document.getElementById('cDay').value 
     };
 
     if (editingCustomerId) {
         const cIndex = db.customers.findIndex(x => x.id === editingCustomerId);
-        if (cIndex > -1) { db.customers[cIndex] = { ...db.customers[cIndex], ...newDetails }; showToast(`${escapeHTML(name)} updated`, "success"); }
+        if (cIndex > -1) { db.customers[cIndex] = { ...db.customers[cIndex], ...newDetails }; showToast(`${name} updated`, "success"); }
     } else {
-        db.customers.push({ id: Date.now().toString(), order: Date.now(), cycleStartDate: Date.now(), ...newDetails, cleaned: false, skipped: false, paidThisMonth: 0, pastArrears: [] });
-        showToast(`${escapeHTML(name)} added to database`, "success"); 
+        db.customers.push({ id: Date.now().toString(), order: Date.now(), cycleOffset: 0, photos: [], ...newDetails, cleaned: false, skipped: false, paidThisMonth: 0, pastArrears: [] });
+        showToast(`${name} added to database`, "success"); 
     }
 
     curWeek = parseInt(newDetails.week); workingDay = newDetails.day;
@@ -391,18 +328,37 @@ window.saveCustomer = () => {
 window.cmdDeleteCustomer = () => {
     if (!editingCustomerId) return;
     const c = db.customers.find(x => x.id === editingCustomerId); if (!c) return;
-    showConfirm("Delete Customer?", `Are you sure you want to permanently remove ${escapeHTML(c.name)}?`, () => {
-        db.customers = db.customers.filter(x => x.id !== editingCustomerId); saveData(); showToast("Deleted.", "normal"); closeAddCustomerModal(); renderAllSafe();
+    window.showConfirm("Delete Customer?", `Are you sure you want to permanently remove ${c.name} from the route?`, () => {
+        db.customers = db.customers.filter(x => x.id !== editingCustomerId); saveData(); showToast(`${c.name} deleted.`, "normal"); closeAddCustomerModal(); renderAllSafe();
     });
 };
 window.saveBank = () => { triggerHaptic(); db.bank.name = document.getElementById('bName').value; db.bank.acc = document.getElementById('bAcc').value; saveData(); showToast("Bank Details Secured 🔒", "success"); };
 
-const showConfirm = (title, text, actionCallback) => { triggerHaptic(); document.getElementById('confirmTitle').innerText = escapeHTML(title); document.getElementById('confirmText').innerText = escapeHTML(text); confirmCallback = actionCallback; document.getElementById('confirmModal').classList.remove('hidden'); };
+// ✨ RESTORED: Confirm Modals and Handlers ✨
+window.showConfirm = (title, text, actionCallback) => { 
+    triggerHaptic(); 
+    document.getElementById('confirmTitle').innerText = title; 
+    document.getElementById('confirmText').innerText = text; 
+    confirmCallback = actionCallback; 
+    document.getElementById('confirmModal').classList.remove('hidden'); 
+};
 window.closeConfirmModal = () => { document.getElementById('confirmModal').classList.add('hidden'); confirmCallback = null; };
-document.getElementById('confirmActionBtn').addEventListener('click', () => { if(confirmCallback) confirmCallback(); closeConfirmModal(); });
 
-window.cmdCycleMonth = () => { showToast("Automated Engine is managing cycles.", "normal"); };
-window.cmdNuclear = () => { showConfirm("FACTORY RESET?", "This will permanently delete all customer data, finances, and settings.", async () => { await idb.clear(); localStorage.removeItem(DB_KEY); location.reload(); }); };
+window.cmdCycleMonth = () => {
+    window.showConfirm("Start New Month?", "This will reset all cleans to false and roll unpaid balances into arrears.", () => {
+        const cycleMonth = new Date().toLocaleString('en-GB', { month: 'short', year: '2-digit' });
+        db.customers.forEach(c => { 
+            const paid = parseFloat(c.paidThisMonth) || 0; const price = c.cleaned ? (parseFloat(c.price) || 0) : 0; 
+            if (paid < price) { if (!c.pastArrears) c.pastArrears = []; c.pastArrears.push({ month: cycleMonth, amt: price - paid }); } 
+            
+            let freq = c.freq || 4; if (c.cycleOffset === undefined) c.cycleOffset = 0;
+            if (c.cycleOffset > 0) { c.cycleOffset--; c.skipped = true; } else { c.cycleOffset = (freq / 4) - 1; c.skipped = false; }
+            c.cleaned = false; c.paidThisMonth = 0; 
+        }); 
+        db.expenses = []; saveData(); location.reload();
+    });
+};
+window.cmdNuclear = () => { window.showConfirm("FACTORY RESET?", "This will permanently delete all customer data, finances, and settings.", async () => { await idb.clear(); localStorage.removeItem(DB_KEY); location.reload(); }); };
 
 window.exportToQuickBooks = () => { triggerHaptic(); let csv = "Date,Description,Amount,Type,Category\n"; const today = new Date().toLocaleDateString('en-GB'); db.customers.forEach(c => { if(parseFloat(c.paidThisMonth) > 0) csv += `${today},Income: ${escapeHTML(c.name)},${c.paidThisMonth},Income,Service\n`; }); db.expenses.forEach(e => { csv += `${e.date},${escapeHTML(e.desc)},${e.amt},Expense,${escapeHTML(e.cat) || 'Other'}\n`; }); triggerDownload(csv, "HydroPro_QuickBooks.csv"); };
 window.exportToXero = () => { triggerHaptic(); let csv = "Date,Description,Reference,Amount,AccountCode\n"; const today = new Date().toLocaleDateString('en-GB'); db.customers.forEach(c => { if(parseFloat(c.paidThisMonth) > 0) csv += `${today},Window Cleaning - ${escapeHTML(c.name)},${c.id},${c.paidThisMonth},200\n`; }); db.expenses.forEach(e => { csv += `${e.date},${escapeHTML(e.desc)},${escapeHTML(e.cat)},-${e.amt},400\n`; }); triggerDownload(csv, "HydroPro_Xero.csv"); };
@@ -426,7 +382,7 @@ window.renderMaster = () => {
         if(c.name.toLowerCase().includes(search) || (c.street||"").toLowerCase().includes(search) || phoneStr.includes(searchStr) || postStr.includes(searchStr)) {
             renderedCount++;
             const arrearsBadge = arrData.isOwed ? `<span class="CST-badge badge-unpaid">OWES £${arrData.total.toFixed(2)}</span>` : `<span class="CST-badge badge-paid">PAID</span>`;
-            const div = document.createElement('div'); div.className = 'CST-card-item'; div.onclick = () => showCustomerBriefing(c.id);
+            const div = document.createElement('div'); div.className = 'CST-card-item'; div.onclick = () => window.showCustomerBriefing(c.id);
             div.innerHTML = `<div class="CST-card-top"><div><strong style="font-size:20px;">${escapeHTML(c.name)}</strong><br><small style="color:var(--accent); font-weight:800;">${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}</small></div><div style="font-weight:950; font-size:22px;">£${(parseFloat(c.price)||0).toFixed(2)}</div></div><div class="CST-card-badges">${arrearsBadge}</div>`;
             list.appendChild(div);
         }
@@ -497,13 +453,15 @@ window.renderWeek = () => {
         const bg = document.createElement('div'); bg.className = 'swipe-bg'; bg.innerHTML = `<div class="action-left">✅</div><div class="action-right">💰</div>`;
         const fg = document.createElement('div'); fg.className = `swipe-fg CST-card-item ${c.skipped ? 'skipped-card' : ''}`;
         
-        fg.innerHTML = `<div style="flex:1;"><strong style="font-size:20px; display:block;">${escapeHTML(c.name)}</strong><small style="color:var(--accent); font-weight:800; display:block;">${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}</small><div class="CST-card-badges">${cleanBadge} ${arrearsBadge} ${skipBadge}</div></div><div style="display:flex; align-items:center; gap: 8px;"><span class="price-text" style="font-weight:950; font-size:22px;">£${(parseFloat(c.price)||0).toFixed(2)}</span><button class="quick-action-btn" onclick="cmdQuickRoute('${c.id}', event)">📍</button><button class="quick-action-btn" onclick="cmdQuickCall('${escapeHTML(c.phone)}', event)">📞</button><div class="drag-handle">≡</div></div>`;
+        fg.innerHTML = `<div style="flex:1;"><strong style="font-size:20px; display:block;">${escapeHTML(c.name)}</strong><small style="color:var(--accent); font-weight:800; display:block;">${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}</small><div class="CST-card-badges">${cleanBadge} ${arrearsBadge} ${skipBadge}</div></div><div style="display:flex; align-items:center; gap: 8px;"><span class="price-text" style="font-weight:950; font-size:22px;">£${(parseFloat(c.price)||0).toFixed(2)}</span><button class="quick-action-btn" onclick="cmdQuickRoute('${c.id}', event)">📍</button><button class="quick-action-btn" onclick="cmdQuickCall('${c.phone}', event)">📞</button><div class="drag-handle">≡</div></div>`;
         
         wrap.appendChild(bg); wrap.appendChild(fg); list.appendChild(wrap); attachSwipeGestures(wrap, fg, c.id); attachDragDrop(wrap, list);
     });
 };
 
-window.cmdQuickCall = (phone, e) => { e.stopPropagation(); triggerHaptic(); if(!phone || phone==='undefined') return showToast("No phone number saved.", "error"); window.location.href = `tel:${escapeHTML(phone)}`; };
+window.cmdQuickCall = (phone, e) => { e.stopPropagation(); triggerHaptic(); if(!phone) return showToast("No phone number saved.", "error"); window.location.href = `tel:${escapeHTML(phone)}`; };
+
+// ✨ RESTORED: Route My Day Logic
 window.routeMyDay = () => {
     triggerHaptic();
     let jobs = db.customers.filter(c => String(c.week).trim() === String(curWeek).trim() && String(c.day).trim() === String(workingDay).trim() && !c.skipped && !c.cleaned).sort((a,b) => (a.order||0) - (b.order||0)).slice(0, 10);
@@ -513,6 +471,7 @@ window.routeMyDay = () => {
     window.open(baseUrl + waypoints, '_blank');
 };
 window.cmdQuickRoute = (id, e) => { e.stopPropagation(); triggerHaptic(); const c = db.customers.find(x => x.id === id); if(!c) return; const mapQuery = encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`); window.open(`https://www.google.com/maps/search/?api=1&query=${mapQuery}`, '_blank'); };
+
 window.cmdToggleSkip = (id) => { triggerHaptic(); const c = db.customers.find(x => x.id === id); c.skipped = !c.skipped; if(c.skipped) c.cleaned = false; saveData(); renderAllSafe(); window.closeBriefing(); showToast(c.skipped ? "Job Skipped ⏭️" : "Skip Removed", "normal"); };
 
 window.cmdReceiptWA = (phone, amt, date) => { triggerHaptic(); if(!phone || phone === 'undefined') return showToast("No phone number saved.", "error"); let p = phone.replace(/\D/g, ''); if(p.startsWith('0')) p = '44' + p.substring(1); let msg = `Receipt from Hydro Pro 💧\n\nReceived: £${parseFloat(amt).toFixed(2)}\nDate: ${date}\n\nThank you for your business!`; window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`, '_blank'); };
@@ -551,7 +510,7 @@ window.handlePhotoUpload = (e) => {
     const reader = new FileReader();
     reader.onload = (event) => {
         const img = new Image();
-        img.onload = async () => {
+        img.onload = () => {
             const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
             const MAX_WIDTH = 800; let width = img.width; let height = img.height;
             if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
@@ -559,17 +518,20 @@ window.handlePhotoUpload = (e) => {
             ctx.drawImage(img, 0, 0, width, height);
             const dataUrl = canvas.toDataURL('image/jpeg', 0.7); 
             
-            // ✨ SAVING TO SEPARATE PHOTO VAULT ✨
-            const photoObj = { id: Date.now(), custId: currentUploadCustId, data: dataUrl, date: new Date().toLocaleDateString('en-GB') };
-            await idb.savePhoto(photoObj);
-            showToast("Evidence Saved to Vault 📸", "success");
-            window.showCustomerBriefing(currentUploadCustId); 
+            const c = db.customers.find(x => x.id === currentUploadCustId);
+            if(c) {
+                if(!c.photos) c.photos = [];
+                c.photos.push({ id: Date.now(), data: dataUrl, date: new Date().toLocaleDateString('en-GB') });
+                saveData(); showToast("Evidence Saved 📸", "success");
+                window.showCustomerBriefing(c.id); 
+            }
         };
         img.src = event.target.result;
     };
     reader.readAsDataURL(file);
 };
 
+// ✨ FIXED: Now correctly displays £0.00 for new customers instead of "Fully Paid" ✨
 const generateArrearsHtml = (arrData, cId, context, phone) => { 
     if (!arrData.isOwed) return `<div class="CMD-alert-success" style="cursor:default;">✅ BALANCE: £0.00</div>`;
     let listHtml = arrData.breakdown.map(b => `<li>£${b.amt.toFixed(2)} - ${escapeHTML(b.month)}</li>`).join('');
@@ -596,10 +558,16 @@ const generateHistoryHtml = (id, phone) => {
     return history.map(h => `<div class="CMD-history-row" style="align-items:center;"><div><span>${escapeHTML(h.date)}</span> <span style="opacity:0.5; font-size:10px; margin-left:5px;">${h.method === 'Bank' ? '🏦' : '💵'}</span></div><div style="display:flex; gap:10px; align-items:center;"><span style="color:var(--success);">£${parseFloat(h.amt).toFixed(2)}</span><button class="quick-action-btn" style="width:28px; height:28px; font-size:12px; margin-left:0;" onclick="cmdReceiptWA('${escapeHTML(phone)}', '${h.amt}', '${escapeHTML(h.date)}')">🧾</button></div></div>`).join('');
 };
 
+const generatePhotoHtml = (c) => {
+    if (!c.photos || c.photos.length === 0) return '';
+    const imgTags = c.photos.map(p => `<img src="${p.data}" class="CMD-photo-thumb" onclick="window.open('${p.data}')">`).join('');
+    return `<h3 class="CMD-history-hdr">Evidence Photos</h3><div class="CMD-photo-gallery">${imgTags}</div>`;
+};
+
+// ✨ RESTORED: closeBriefing logic that allows the 'X' button to work! ✨
 window.closeBriefing = () => { document.getElementById('briefingModal').classList.add('hidden'); };
 
-// ✨ ASYNC BRIEFINGS (Pulls photos from IDB Vault) ✨
-window.showJobBriefing = async (id) => {
+window.showJobBriefing = (id) => {
     triggerHaptic(); const c = db.customers.find(x => x.id === id); if(!c) return;
     const container = document.getElementById('briefingData'); const arrData = window.getArrearsData(c);
     const mapQuery = encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`); const navUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
@@ -620,19 +588,13 @@ window.showJobBriefing = async (id) => {
             <button class="CMD-action-btn sms" onclick="cmdReceiptSMS('${escapeHTML(c.phone)}', '${c.price}', '${new Date().toLocaleDateString('en-GB')}')"><span style="font-size:24px;">📱</span> <br>SMS REC</button>
             <button class="CMD-action-btn ai-btn ai-glow-btn" onclick="triggerAI('reply', '${c.id}')"><span style="font-size:24px;">✨</span> <br>SMART REPLY</button>
         </div>
-        <div id="modal-photo-gallery"></div>
+        ${generatePhotoHtml(c)}
         <h3 class="CMD-history-hdr">Rolling History (Tap 🧾 for receipt)</h3><div class="CMD-history-box">${generateHistoryHtml(c.id, c.phone)}</div>
     `;
     document.getElementById('briefingModal').classList.remove('hidden');
-
-    const photos = await idb.getPhotos(c.id);
-    const photoContainer = document.getElementById('modal-photo-gallery');
-    if(photos.length > 0) {
-        photoContainer.innerHTML = `<h3 class="CMD-history-hdr">Evidence Photos</h3><div class="CMD-photo-gallery">${photos.map(p => `<img src="${p.data}" class="CMD-photo-thumb" onclick="window.open('${p.data}')">`).join('')}</div>`;
-    }
 };
 
-window.showCustomerBriefing = async (id) => { 
+window.showCustomerBriefing = (id) => { 
     triggerHaptic(); const c = db.customers.find(x => x.id === id); if(!c) return;
     const container = document.getElementById('briefingData'); const arrData = window.getArrearsData(c);
     const notesHtml = c.notes ? `<div class="CMD-notes-box">📝 ${escapeHTML(c.notes)}</div>` : '';
@@ -646,16 +608,10 @@ window.showCustomerBriefing = async (id) => {
             <button class="ADM-save-btn" style="margin-top:0; height: 50px!important; font-size: 12px; background: rgba(0,0,0,0.05); color: var(--text); box-shadow: none; flex:1;" onclick="triggerPhotoUpload('${c.id}')">📷 LOG EVIDENCE</button>
             <button class="ADM-save-btn" style="margin-top:0; height: 50px!important; font-size: 12px; background: transparent; border: 2px solid var(--accent); color: var(--accent); box-shadow: none; flex:1;" onclick="cmdGenerateInvoice('${c.id}')">📄 PDF INVOICE</button>
         </div>
-        <div id="modal-photo-gallery"></div>
+        ${generatePhotoHtml(c)}
         <h3 class="CMD-history-hdr">Rolling History (Tap 🧾 for receipt)</h3><div class="CMD-history-box">${generateHistoryHtml(c.id, c.phone)}</div>
     `;
     document.getElementById('briefingModal').classList.remove('hidden');
-
-    const photos = await idb.getPhotos(c.id);
-    const photoContainer = document.getElementById('modal-photo-gallery');
-    if(photos.length > 0) {
-        photoContainer.innerHTML = `<h3 class="CMD-history-hdr">Evidence Photos</h3><div class="CMD-photo-gallery">${photos.map(p => `<img src="${p.data}" class="CMD-photo-thumb" onclick="window.open('${p.data}')">`).join('')}</div>`;
-    }
 };
 
 const getFinancialYearDates = (yearStr) => {
@@ -707,7 +663,7 @@ window.cmdGenerateTaxPDF = () => {
             <div style="display:flex; justify-content:space-between; padding:10px 0;"><strong>Total Expenses</strong><strong style="color:#ff453a;">-£${totalSpend.toFixed(2)}</strong></div>
             <hr style="border: 1px solid #eee; margin: 30px 0;">
             <p style="text-align: right; font-size: 26px; color: #34C759;"><strong>Net Profit: £${(totalIncome - totalSpend).toFixed(2)}</strong></p>
-            <p style="font-size: 12px; color: #999; text-align: center; margin-top:50px;">Generated by Ultimate Hydro Pro. Keep for your self-assessment records.</p>
+            <p style="font-size: 12px; color: #999; text-align: center; margin-top:50px;">Generated by Ultimate Hydro Pro.</p>
         </div>
     `;
     window.print();
@@ -799,6 +755,58 @@ window.renderFinances = () => {
         ledger.innerHTML = ledgerHtml; 
     }
 };
+
+// ✨ RESTORED: Missing function for Setting Payment Method ✨
+window.setPayMethod = (method) => {
+    currentPayMethod = method;
+    document.getElementById('btnPayCash').classList.remove('active');
+    document.getElementById('btnPayBank').classList.remove('active');
+    if (method === 'Cash') document.getElementById('btnPayCash').classList.add('active');
+    if (method === 'Bank') document.getElementById('btnPayBank').classList.add('active');
+};
+
+// ✨ RESTORED: Missing function for the Tomorrow Reminder feature ✨
+window.openTomorrowModal = () => {
+    triggerHaptic();
+    const list = document.getElementById('tomorrow-list');
+    list.innerHTML = '';
+    
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    let todayIdx = days.indexOf(workingDay);
+    let tmrwIdx = (todayIdx + 1) % 7;
+    let tmrwDay = days[tmrwIdx];
+    let tmrwWeek = curWeek;
+    if (tmrwIdx === 1 && todayIdx === 0) { tmrwWeek = curWeek >= 5 ? 1 : curWeek + 1; }
+    
+    document.getElementById('tomorrow-title-sub').innerText = `Wk ${tmrwWeek} - ${tmrwDay}`;
+    
+    let tmrwJobs = db.customers.filter(c => String(c.week).trim() === String(tmrwWeek).trim() && String(c.day).trim() === String(tmrwDay).trim() && !c.skipped);
+    
+    if (tmrwJobs.length === 0) {
+        list.innerHTML = '<div style="padding:20px; text-align:center; opacity:0.5; font-weight:800;">No jobs scheduled for tomorrow.</div>';
+    } else {
+        tmrwJobs.forEach(c => {
+            let p = (c.phone || '').replace(/\D/g, '');
+            let isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; 
+            let sep = isIOS ? '&' : '?';
+            let msg = `Hi ${c.name}, just a quick reminder from Hydro Pro that your window clean is due tomorrow! Please leave any side gates unlocked. Thank you! 💧`;
+            let smsLink = p ? `sms:${p}${sep}body=${encodeURIComponent(msg)}` : '#';
+            let waLink = p ? `https://wa.me/${p.startsWith('0') ? '44' + p.substring(1) : p}?text=${encodeURIComponent(msg)}` : '#';
+            
+            list.innerHTML += `
+                <div style="background:var(--ios-grey); padding:15px; border-radius:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="flex:1;"><strong>${escapeHTML(c.name)}</strong><br><small>${escapeHTML(c.houseNum)} ${escapeHTML(c.street)}</small></div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="quick-action-btn" style="margin:0; background:rgba(52, 199, 89, 0.2); color:var(--success);" onclick="window.open('${waLink}', '_blank')">💬</button>
+                        <button class="quick-action-btn" style="margin:0; background:rgba(0, 122, 255, 0.2); color:var(--accent);" onclick="window.location.href='${smsLink}'">📱</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    document.getElementById('tomorrowModal').classList.remove('hidden');
+};
+window.closeTomorrowModal = () => { document.getElementById('tomorrowModal').classList.add('hidden'); };
 
 const getIcon = (code) => { const map = { '01d':'☀️','01n':'🌙','02d':'⛅','02n':'☁️','03d':'☁️','03n':'☁️','04d':'☁️','04n':'☁️','09d':'🌧️','09n':'🌧️','10d':'🌧️','10n':'🌧️','11d':'🌦️','11n':'🌧️','13d':'🌨️','13n':'🌨️','50d':'💨','50n':'💨' }; return map[code] || '🌤️'; };
 async function initWeather() { 
