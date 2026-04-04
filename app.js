@@ -79,18 +79,17 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// 🛡️ The Syntax-Safe Escape Function
+// 🛡️ Safe HTML Escaping (Hardcoded to prevent parsing errors)
 window.escapeHTML = (str) => {
     if (str === null || str === undefined) return '';
     return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;"); 
+        .replace(/&/g, '&' + 'amp;')
+        .replace(/</g, '&' + 'lt;')
+        .replace(/>/g, '&' + 'gt;')
+        .replace(/"/g, '&' + 'quot;')
+        .replace(/'/g, '&' + '#39;'); 
 };
 
-// 🛡️ The Global Modal Closer
 window.closeAllModals = () => {
     document.querySelectorAll('.modal-overlay').forEach(modal => modal.classList.add('hidden'));
     confirmCallback = null;
@@ -162,7 +161,7 @@ const initPTR = () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("Ultimate Hydro Pro v5.8 Booting...");
+    console.log("Ultimate Hydro Pro v5.9 Booting...");
     try {
         await idb.init(); 
         let savedData = await idb.get('master_db');
@@ -216,9 +215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 window.runDeepScanRecovery = async () => {
-    triggerHaptic();
-    window.showToast("Scanning device memory...", "normal");
-    
+    triggerHaptic(); window.showToast("Scanning device memory...", "normal");
     setTimeout(async () => {
         let foundDb = null;
         for (let i = 0; i < localStorage.length; i++) {
@@ -226,21 +223,13 @@ window.runDeepScanRecovery = async () => {
             if (key.includes('Hydro') || key.includes('DB') || key.includes('Gold')) {
                 try {
                     let parsed = JSON.parse(localStorage.getItem(key));
-                    if (parsed && parsed.customers && parsed.customers.length > (foundDb ? foundDb.customers.length : 0)) {
-                        foundDb = parsed;
-                    }
+                    if (parsed && parsed.customers && parsed.customers.length > (foundDb ? foundDb.customers.length : 0)) foundDb = parsed;
                 } catch(e) { } 
             }
         }
-        
         if (foundDb && foundDb.customers.length > 0) {
-            db = foundDb;
-            await idb.set('master_db', db);
-            window.renderAllSafe();
-            window.showToast(`Recovered ${db.customers.length} customers! 🛟`, "success");
-        } else {
-            window.showToast("No ghost data found in memory.", "error");
-        }
+            db = foundDb; await idb.set('master_db', db); window.renderAllSafe(); window.showToast(`Recovered ${db.customers.length} customers! 🛟`, "success");
+        } else { window.showToast("No ghost data found in memory.", "error"); }
     }, 500);
 };
 
@@ -261,8 +250,7 @@ window.openTab = (id, btnId = null) => {
     const target = document.getElementById(id);
     if(target) { target.classList.add('active'); const titleText = target.getAttribute('data-title'); if(titleText) document.getElementById('dynamic-header-title').innerText = titleText; }
     if (btnId) {
-        document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.home-fab').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.nav-item, .home-fab').forEach(btn => btn.classList.remove('active'));
         const btnEl = document.getElementById(btnId); if(btnEl) btnEl.classList.add('active');
     }
     window.scrollTo(0,0); window.renderAllSafe();
@@ -280,13 +268,11 @@ window.renderAllSafe = () => {
 window.renderHome = () => {
     const dateOptions = { weekday: 'long', month: 'long', day: 'numeric' };
     document.getElementById('home-date').innerText = new Date().toLocaleDateString('en-GB', dateOptions).toUpperCase();
-
     const currentHour = new Date().getHours();
     let greeting = "Good Morning.";
     if (currentHour >= 12 && currentHour < 17) greeting = "Good Afternoon.";
     else if (currentHour >= 17) greeting = "Good Evening.";
-    const greetingEl = document.getElementById('home-greeting');
-    if (greetingEl) greetingEl.innerText = greeting;
+    document.getElementById('home-greeting').innerText = greeting;
 
     let todaysJobs = db.customers.filter(c => String(c.week).trim() === String(curWeek).trim() && String(c.day).trim() === String(workingDay).trim() && !c.skipped);
     let routeValue = todaysJobs.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
@@ -518,7 +504,7 @@ window.cmdQuickCall = (phone, e) => {
     window.location.href = `tel:${window.escapeHTML(phone)}`; 
 };
 
-// 🗺️ FIXED: Multi-stop routing accurately using the Official Google Maps Directions Link
+// 📍 REAL FIX: Official Google Maps API for multiple waypoints
 window.routeMyDay = () => {
     triggerHaptic();
     let jobs = db.customers.filter(c => String(c.week).trim() === String(curWeek).trim() && String(c.day).trim() === String(workingDay).trim() && !c.skipped && !c.cleaned).sort((a,b) => (a.order||0) - (b.order||0)).slice(0, 10); 
@@ -533,7 +519,7 @@ window.routeMyDay = () => {
     window.open(url, '_blank');
 };
 
-// 🗺️ FIXED: Single-stop routing accurately using the Official Google Maps Directions Link
+// 📍 REAL FIX: Official Google Maps API for single destination
 window.cmdQuickRoute = (id, e) => { 
     if(e) e.stopPropagation(); 
     triggerHaptic(); 
@@ -661,7 +647,7 @@ window.cmdSettlePaid = (id, context) => {
     document.getElementById('paymentModal').classList.remove('hidden'); 
 };
 
-// ✨ FIXED: Added robust fallback to prevent NaN errors when parsing empty balances
+// 🛡️ Added strict fallbacks for partial payments to stop NaN errors
 window.processPayment = (type) => { 
     const c = db.customers.find(x => x.id === currentPayId);
     let amt = (type === 'full') ? window.getArrearsData(c).total : parseFloat(document.getElementById('pay-custom-amt').value);
@@ -738,7 +724,7 @@ window.showCustomerBriefing = async (id) => {
     }
 };
 
-// ✨ FIXED: Added strict T00:00:00 ISO formatting so dates never skip backwards
+// 🛡️ Added hard T00:00:00 to prevent daylight savings bugs in tax math
 const getFinancialYearDates = (yearStr) => {
     const startYear = parseInt(yearStr);
     return { start: new Date(`${startYear}-04-06T00:00:00`), end: new Date(`${startYear + 1}-04-05T23:59:59`) };
@@ -895,7 +881,6 @@ window.setPayMethod = (method) => {
     if (method === 'Bank') document.getElementById('btnPayBank').classList.add('active');
 };
 
-// ✨ FIXED: Mathematical integer coercion for explicit week rollovers ✨
 window.openTomorrowModal = () => {
     triggerHaptic();
     const list = document.getElementById('tomorrow-list');
