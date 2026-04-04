@@ -83,11 +83,11 @@ if ('serviceWorker' in navigator) {
 window.escapeHTML = (str) => {
     if (str === null || str === undefined) return '';
     return String(str)
-        .replace(/&/g, "&")
-        .replace(/</g, "<")
-        .replace(/>/g, ">")
-        .replace(/"/g, """)
-        .replace(/'/g, "'"); 
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;"); 
 };
 
 // 🛡️ The Global Modal Closer
@@ -162,7 +162,7 @@ const initPTR = () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("Ultimate Hydro Pro v5.7 Booting...");
+    console.log("Ultimate Hydro Pro v5.8 Booting...");
     try {
         await idb.init(); 
         let savedData = await idb.get('master_db');
@@ -305,8 +305,7 @@ window.openAITeaserModal = () => {
     triggerHaptic();
     const input = document.getElementById('aiKeyInputModal');
     if(input) input.value = localStorage.getItem('HP_AI_Key') || '';
-    const modal = document.getElementById('aiTeaserModal');
-    if(modal) modal.classList.remove('hidden');
+    document.getElementById('aiTeaserModal').classList.remove('hidden');
 };
 window.saveModalAIKey = () => {
     triggerHaptic(); const key = document.getElementById('aiKeyInputModal').value.trim();
@@ -519,7 +518,7 @@ window.cmdQuickCall = (phone, e) => {
     window.location.href = `tel:${window.escapeHTML(phone)}`; 
 };
 
-// ✨ FIXED: Multi-stop routing accurately using the Official Google Maps Directions Link
+// 🗺️ FIXED: Multi-stop routing accurately using the Official Google Maps Directions Link
 window.routeMyDay = () => {
     triggerHaptic();
     let jobs = db.customers.filter(c => String(c.week).trim() === String(curWeek).trim() && String(c.day).trim() === String(workingDay).trim() && !c.skipped && !c.cleaned).sort((a,b) => (a.order||0) - (b.order||0)).slice(0, 10); 
@@ -534,7 +533,7 @@ window.routeMyDay = () => {
     window.open(url, '_blank');
 };
 
-// ✨ FIXED: Single-stop routing accurately using the Official Google Maps Directions Link
+// 🗺️ FIXED: Single-stop routing accurately using the Official Google Maps Directions Link
 window.cmdQuickRoute = (id, e) => { 
     if(e) e.stopPropagation(); 
     triggerHaptic(); 
@@ -618,7 +617,6 @@ window.handlePhotoUpload = (e) => {
     reader.readAsDataURL(file);
 };
 
-// ✨ FIXED: The "Fully Paid" Logic Bug ✨
 const generateArrearsHtml = (arrData, c, context) => { 
     if (!arrData.isOwed) {
         if (c.cleaned) {
@@ -663,19 +661,19 @@ window.cmdSettlePaid = (id, context) => {
     document.getElementById('paymentModal').classList.remove('hidden'); 
 };
 
+// ✨ FIXED: Added robust fallback to prevent NaN errors when parsing empty balances
 window.processPayment = (type) => { 
     const c = db.customers.find(x => x.id === currentPayId);
     let amt = (type === 'full') ? window.getArrearsData(c).total : parseFloat(document.getElementById('pay-custom-amt').value);
     if(isNaN(amt) || amt <= 0) return window.showToast("Enter a valid amount", "error");
-    c.paidThisMonth += amt;
+    c.paidThisMonth = (parseFloat(c.paidThisMonth) || 0) + amt;
     db.history.push({ custId: currentPayId, amt, date: new Date().toLocaleDateString('en-GB'), method: currentPayMethod });
     window.saveData(); 
     window.renderAllSafe(); 
     window.closeAllModals(); 
-    window.showToast(`£${amt} Collected!`, "success");
+    window.showToast(`£${amt.toFixed(2)} Collected!`, "success");
 };
 
-// ✨ FIXED: Huge "CLOSE CARD" bottom button added to prevent being trapped
 window.showJobBriefing = async (id) => {
     triggerHaptic(); const c = db.customers.find(x => x.id === id); if(!c) return;
     const container = document.getElementById('briefingData'); const arrData = window.getArrearsData(c);
@@ -740,14 +738,15 @@ window.showCustomerBriefing = async (id) => {
     }
 };
 
+// ✨ FIXED: Added strict T00:00:00 ISO formatting so dates never skip backwards
 const getFinancialYearDates = (yearStr) => {
     const startYear = parseInt(yearStr);
-    return { start: new Date(`${startYear}-04-06`), end: new Date(`${startYear + 1}-04-05`) };
+    return { start: new Date(`${startYear}-04-06T00:00:00`), end: new Date(`${startYear + 1}-04-05T23:59:59`) };
 };
 
 const parseGBDate = (dateStr) => {
     const parts = dateStr.split('/');
-    if(parts.length === 3) return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    if(parts.length === 3) return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T12:00:00`);
     return new Date(); 
 };
 
@@ -802,10 +801,10 @@ window.cmdGenerateMTD = () => {
     const startYear = parseInt(yearStr);
     
     let start, end;
-    if(qStr === 'Q1') { start = new Date(`${startYear}-04-06`); end = new Date(`${startYear}-07-05`); }
-    if(qStr === 'Q2') { start = new Date(`${startYear}-07-06`); end = new Date(`${startYear}-10-05`); }
-    if(qStr === 'Q3') { start = new Date(`${startYear}-10-06`); end = new Date(`${startYear+1}-01-05`); }
-    if(qStr === 'Q4') { start = new Date(`${startYear+1}-01-06`); end = new Date(`${startYear+1}-04-05`); }
+    if(qStr === 'Q1') { start = new Date(`${startYear}-04-06T00:00:00`); end = new Date(`${startYear}-07-05T23:59:59`); }
+    if(qStr === 'Q2') { start = new Date(`${startYear}-07-06T00:00:00`); end = new Date(`${startYear}-10-05T23:59:59`); }
+    if(qStr === 'Q3') { start = new Date(`${startYear}-10-06T00:00:00`); end = new Date(`${startYear+1}-01-05T23:59:59`); }
+    if(qStr === 'Q4') { start = new Date(`${startYear+1}-01-06T00:00:00`); end = new Date(`${startYear+1}-04-05T23:59:59`); }
 
     let csv = "Date,Reference,Description,Amount,Category\n";
     db.history.forEach(h => {
@@ -896,7 +895,7 @@ window.setPayMethod = (method) => {
     if (method === 'Bank') document.getElementById('btnPayBank').classList.add('active');
 };
 
-// ✨ FIXED: Math Engine explicitly handles numbers for week rollover ✨
+// ✨ FIXED: Mathematical integer coercion for explicit week rollovers ✨
 window.openTomorrowModal = () => {
     triggerHaptic();
     const list = document.getElementById('tomorrow-list');
@@ -907,7 +906,7 @@ window.openTomorrowModal = () => {
     let tmrwIdx = (todayIdx + 1) % 7;
     let tmrwDay = days[tmrwIdx];
     
-    let currentWkInt = parseInt(curWeek) || 1;
+    let currentWkInt = parseInt(curWeek, 10) || 1;
     let tmrwWeek = currentWkInt;
     if (tmrwIdx === 1 && todayIdx === 0) { 
         tmrwWeek = currentWkInt >= 5 ? 1 : currentWkInt + 1; 
