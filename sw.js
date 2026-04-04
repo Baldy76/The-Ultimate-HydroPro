@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ultimate-hydro-v5-9';
+const CACHE_NAME = 'ultimate-hydro-v6-0';
 const ASSETS = [
     './index.html',
     './styles.css',
@@ -20,5 +20,6 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-    event.respondWith(caches.match(event.request).then(res => res || fetch(event.request)));
+    // ✨ FIXED: ignoreSearch bypasses the query string trap so JS always loads offline
+    event.respondWith(caches.match(event.request, { ignoreSearch: true }).then(res => res || fetch(event.request)));
 });
