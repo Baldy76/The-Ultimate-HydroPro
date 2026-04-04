@@ -21,7 +21,6 @@ let showArrearsOnly = false;
 let editingCustomerId = null;
 let currentPayMethod = 'Cash'; 
 
-// 🛡️ The Dual-Vault DB
 const idb = {
     db: null,
     init: () => new Promise((resolve, reject) => {
@@ -79,15 +78,14 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// 🛡️ Safe HTML Escaping
 window.escapeHTML = (str) => {
     if (str === null || str === undefined) return '';
     return String(str)
-        .replace(/&/g, '&' + 'amp;')
-        .replace(/</g, '&' + 'lt;')
-        .replace(/>/g, '&' + 'gt;')
-        .replace(/"/g, '&' + 'quot;')
-        .replace(/'/g, '&' + '#39;'); 
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;"); 
 };
 
 window.closeAllModals = () => {
@@ -161,7 +159,7 @@ const initPTR = () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("Ultimate Hydro Pro v5.9 Booting...");
+    console.log("Ultimate Hydro Pro v6.0 Booting...");
     try {
         await idb.init(); 
         let savedData = await idb.get('master_db');
@@ -455,4 +453,501 @@ const attachSwipeGestures = (wrap, fg, cId) => {
     }, {passive: true});
     fg.addEventListener('touchend', e => {
         if(e.target.closest('.drag-handle') || e.target.closest('.quick-action-btn')) return; let diff = currentX - startX; fg.classList.remove('swiping'); fg.style.transform = `translate3d(0, 0, 0)`;
-        if (isSwiping) { if (diff > 55) { window.cmdToggleClean(cId); } else if (diff < -55) { window.cmdSettlePaid(cId, 'job'); } } setTimeout(() => { isSwiping = false; }, 100); startX =
+        if (isSwiping) { if (diff > 55) { window.cmdToggleClean(cId); } else if (diff < -55) { window.cmdSettlePaid(cId, 'job'); } } setTimeout(() => { isSwiping = false; }, 100); startX = 0; currentX = 0;
+    });
+    fg.addEventListener('click', e => { if(!isSwiping && !e.target.closest('.drag-handle') && !e.target.closest('.quick-action-btn')) { window.showJobBriefing(cId); } });
+};
+
+const attachDragDrop = (wrap, listContainer) => {
+    const handle = wrap.querySelector('.drag-handle'); let isDragging = false;
+    handle.addEventListener('touchstart', e => { isDragging = true; triggerHaptic(); wrap.classList.add('dragging'); }, {passive: true});
+    handle.addEventListener('touchmove', e => {
+        if (!isDragging) return; e.preventDefault(); const touchY = e.touches[0].clientY; const siblings = [...listContainer.querySelectorAll('.swipe-wrapper:not(.dragging)')];
+        let nextSibling = siblings.find(sib => { const rect = sib.getBoundingClientRect(); return touchY <= rect.top + rect.height / 2; });
+        if (nextSibling) { listContainer.insertBefore(wrap, nextSibling); } else { listContainer.appendChild(wrap); }
+    }, {passive: false});
+    handle.addEventListener('touchend', e => {
+        if (!isDragging) return; isDragging = false; wrap.classList.remove('dragging'); triggerHaptic();
+        const newOrderEls = [...listContainer.querySelectorAll('.swipe-wrapper')];
+        newOrderEls.forEach((el, index) => { const customer = db.customers.find(c => c.id === el.dataset.id); if(customer) customer.order = index; }); window.saveData();
+    });
+};
+
+window.renderWeek = () => { 
+    const list = document.getElementById('WEE-list-container'); if(!list) return; list.innerHTML = '';
+    
+    let customersToday = db.customers.filter(c => String(c.week).trim() === String(curWeek).trim() && String(c.day).trim() === String(workingDay).trim()).sort((a, b) => { if (a.skipped === b.skipped) return (a.order || 0) - (b.order || 0); return a.skipped ? 1 : -1; });
+    const progressDash = document.getElementById('WEE-progress-dashboard');
+    if(customersToday.length === 0) { progressDash.innerHTML = ''; list.innerHTML = `<div class="empty-state"><span class="empty-icon">🏖️</span><div class="empty-text">Zero Jobs Today</div><div class="empty-sub">Enjoy the day off, or add a job!</div><button class="ADM-save-btn" style="width: 220px; font-size: 14px; height: 50px!important; margin-top: 20px; box-shadow: 0 5px 15px rgba(0,122,255,0.2);" onclick="window.openAddCustomerModal()">➕ ADD CUSTOMER</button></div>`; return; }
+
+    let completedCount = customersToday.filter(c => c.cleaned || c.skipped).length; let totalCount = customersToday.length; let pct = totalCount === 0 ? 0 : (completedCount / totalCount) * 100; let dailyValue = customersToday.filter(c => c.cleaned).reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
+    progressDash.innerHTML = `<div class="WEE-progress-wrap"><div class="WEE-progress-fill" style="width: ${pct}%;"></div></div><div class="WEE-progress-text">${completedCount} of ${totalCount} Done • £${dailyValue.toFixed(2)} Cleaned Today</div>`;
+
+    customersToday.forEach(c => {
+        const arrData = window.getArrearsData(c);
+        const cleanBadge = c.cleaned ? `<span class="CST-badge badge-clean">✅ CLEANED</span>` : '';
+        
+        let arrearsBadge = '';
+        if (arrData.isOwed) {
+            arrearsBadge = `<span class="CST-badge badge-unpaid">❌ OWES £${arrData.total.toFixed(2)}</span>`;
+        } else if (c.cleaned) {
+            arrearsBadge = `<span class="CST-badge badge-paid">✅ PAID</span>`;
+        }
+        
+        const skipBadge = c.skipped ? `<span class="CST-badge badge-unpaid" style="background: rgba(255, 149, 0, 0.15); color: #cc7700;">⏭️ SKIPPED</span>` : '';
+        
+        const wrap = document.createElement('div'); wrap.className = 'swipe-wrapper'; wrap.dataset.id = c.id;
+        const bg = document.createElement('div'); bg.className = 'swipe-bg'; bg.innerHTML = `<div class="action-left">✅</div><div class="action-right">💰</div>`;
+        const fg = document.createElement('div'); fg.className = `swipe-fg CST-card-item ${c.skipped ? 'skipped-card' : ''}`;
+        
+        fg.innerHTML = `<div style="flex:1;"><strong style="font-size:20px; display:block;">${window.escapeHTML(c.name)}</strong><small style="color:var(--accent); font-weight:800; display:block;">${window.escapeHTML(c.houseNum)} ${window.escapeHTML(c.street)}</small><div class="CST-card-badges">${cleanBadge} ${arrearsBadge} ${skipBadge}</div></div><div style="display:flex; align-items:center; gap: 8px;"><span class="price-text" style="font-weight:950; font-size:22px;">£${(parseFloat(c.price)||0).toFixed(2)}</span><button class="quick-action-btn" onclick="window.cmdQuickRoute('${c.id}', event)">📍</button><button class="quick-action-btn" onclick="window.cmdQuickCall('${window.escapeHTML(c.phone)}', event)">📞</button><div class="drag-handle">≡</div></div>`;
+        
+        wrap.appendChild(bg); wrap.appendChild(fg); list.appendChild(wrap); attachSwipeGestures(wrap, fg, c.id); attachDragDrop(wrap, list);
+    });
+};
+
+window.cmdQuickCall = (phone, e) => { 
+    if(e) e.stopPropagation(); 
+    triggerHaptic(); 
+    if(!phone || phone==='undefined') return window.showToast("No phone number saved.", "error"); 
+    window.location.href = `tel:${window.escapeHTML(phone)}`; 
+};
+
+// 📍 REAL FIX: Official Google Maps API for multiple waypoints
+window.routeMyDay = () => {
+    triggerHaptic();
+    let jobs = db.customers.filter(c => String(c.week).trim() === String(curWeek).trim() && String(c.day).trim() === String(workingDay).trim() && !c.skipped && !c.cleaned).sort((a,b) => (a.order||0) - (b.order||0)).slice(0, 10); 
+    if(jobs.length === 0) return window.showToast("No uncleaned jobs to route!", "error");
+    
+    let dest = encodeURIComponent(`${jobs[jobs.length-1].houseNum} ${jobs[jobs.length-1].street}, ${jobs[jobs.length-1].postcode || ''}`);
+    let waypoints = jobs.slice(0, -1).map(c => encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`)).join('|');
+    
+    let url = `https://www.google.com/maps/dir/?api=1&origin=Current+Location&destination=${dest}`;
+    if (waypoints) url += `&waypoints=${waypoints}`;
+    
+    window.open(url, '_blank');
+};
+
+// 📍 REAL FIX: Official Google Maps API for single destination
+window.cmdQuickRoute = (id, e) => { 
+    if(e) e.stopPropagation(); 
+    triggerHaptic(); 
+    const c = db.customers.find(x => x.id === id); 
+    if(!c) return; 
+    const dest = encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`); 
+    window.open(`https://www.google.com/maps/dir/?api=1&origin=Current+Location&destination=${dest}`, '_blank'); 
+};
+
+window.cmdToggleClean = (id) => { 
+    const c = db.customers.find(x => x.id === id); 
+    c.cleaned = !c.cleaned; 
+    window.saveData(); 
+    window.renderAllSafe(); 
+    window.closeAllModals(); 
+    window.showToast(c.cleaned ? "Job Cleaned 💧" : "Clean Reverted", "success"); 
+};
+
+window.cmdToggleSkip = (id) => { 
+    triggerHaptic(); 
+    const c = db.customers.find(x => x.id === id); 
+    c.skipped = !c.skipped; 
+    if(c.skipped) c.cleaned = false; 
+    window.saveData(); 
+    window.renderAllSafe(); 
+    window.closeAllModals(); 
+    window.showToast(c.skipped ? "Job Skipped ⏭️" : "Skip Removed", "normal"); 
+};
+
+window.cmdReceiptWA = (phone, amt, date) => { triggerHaptic(); if(!phone || phone === 'undefined') return window.showToast("No phone number saved.", "error"); let p = phone.replace(/\D/g, ''); if(p.startsWith('0')) p = '44' + p.substring(1); let msg = `Receipt from Hydro Pro 💧\n\nReceived: £${parseFloat(amt).toFixed(2)}\nDate: ${date}\n\nThank you for your business!`; window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`, '_blank'); };
+window.cmdReceiptSMS = (phone, amt, date) => { triggerHaptic(); if(!phone || phone === 'undefined') return window.showToast("No phone number saved.", "error"); let p = phone.replace(/\D/g, ''); let msg = `Receipt from Hydro Pro 💧\n\nReceived: £${parseFloat(amt).toFixed(2)}\nDate: ${date}\n\nThank you for your business!`; const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; const separator = isIOS ? '&' : '?'; window.location.href = `sms:${p}${separator}body=${encodeURIComponent(msg)}`; };
+
+window.cmdChaseWA = (id, type) => {
+    triggerHaptic(); const c = db.customers.find(x => x.id === id); if(!c || !c.phone) return window.showToast("No phone number saved.", "error");
+    const arrData = window.getArrearsData(c); let p = c.phone.replace(/\D/g, ''); if(p.startsWith('0')) p = '44' + p.substring(1);
+    let msg = "";
+    if (type === 'polite') { msg = `Hi ${c.name}, hope you're well! Just a quick reminder of an outstanding balance of £${arrData.total.toFixed(2)} for your window clean. Let me know if you need the bank details again! 💧`; }
+    if (type === 'firm') { msg = `Hi ${c.name}, this is a reminder that your account is now overdue by £${arrData.total.toFixed(2)}. Please arrange payment as soon as possible to avoid interruption to your service. Thank you, Hydro Pro.`; }
+    window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`, '_blank');
+};
+
+window.cmdChaseSMS = (id, type) => {
+    triggerHaptic(); const c = db.customers.find(x => x.id === id); if(!c || !c.phone) return window.showToast("No phone number saved.", "error");
+    const arrData = window.getArrearsData(c); let p = c.phone.replace(/\D/g, '');
+    let msg = "";
+    if (type === 'polite') { msg = `Hi ${c.name}, hope you're well! Just a quick reminder of an outstanding balance of £${arrData.total.toFixed(2)} for your window clean. Let me know if you need the bank details again! 💧`; }
+    if (type === 'firm') { msg = `Hi ${c.name}, this is a reminder that your account is now overdue by £${arrData.total.toFixed(2)}. Please arrange payment as soon as possible to avoid interruption to your service. Thank you, Hydro Pro.`; }
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; const separator = isIOS ? '&' : '?';
+    window.location.href = `sms:${p}${separator}body=${encodeURIComponent(msg)}`;
+};
+
+window.cmdGenerateInvoice = (id) => {
+    triggerHaptic(); const c = db.customers.find(x => x.id === id); if(!c) return; const arrData = window.getArrearsData(c); const printArea = document.getElementById('print-area');
+    printArea.innerHTML = `<div style="max-width: 800px; margin: 0 auto; font-family: sans-serif; color: black; padding: 20px;"><h1 style="color: #007aff; margin-bottom: 5px;">INVOICE</h1><p style="margin-top: 0; color: #666; font-size: 14px;"><strong>From:</strong> Hydro Pro Window Cleaning<br><strong>Date:</strong> ${new Date().toLocaleDateString('en-GB')}</p><hr style="border: 1px solid #eee; margin: 20px 0;"><p style="font-size: 16px;"><strong>To:</strong><br>${window.escapeHTML(c.name)}<br>${window.escapeHTML(c.houseNum)} ${window.escapeHTML(c.street)}<br>${window.escapeHTML(c.postcode)}</p><table style="width: 100%; text-align: left; border-collapse: collapse; margin-top: 30px;"><tr style="border-bottom: 2px solid #000;"><th style="padding: 10px 0;">Description</th><th style="padding: 10px 0; text-align: right;">Amount</th></tr><tr><td style="padding: 15px 0; border-bottom: 1px solid #eee;">Window Cleaning Service</td><td style="padding: 15px 0; border-bottom: 1px solid #eee; text-align: right;">£${parseFloat(c.price).toFixed(2)}</td></tr></table>${arrData.isOwed ? `<p style="text-align: right; font-size: 22px; margin-top: 30px; color: #ff453a;"><strong>Total Outstanding: £${arrData.total.toFixed(2)}</strong></p>` : `<p style="text-align: right; font-size: 22px; margin-top: 30px; color: #34C759;"><strong>PAID IN FULL</strong></p>`}<hr style="border: 1px solid #eee; margin-top: 50px;"><p style="font-size: 14px; color: #666; text-align: center;"><strong>Payment Details:</strong><br>${window.escapeHTML(db.bank.name)} | Acc: ${window.escapeHTML(db.bank.acc)}</p></div>`;
+    window.print();
+};
+
+let currentUploadCustId = null;
+window.triggerPhotoUpload = (id) => { triggerHaptic(); currentUploadCustId = id; document.getElementById('cameraInput').click(); };
+
+window.handlePhotoUpload = (e) => {
+    const file = e.target.files[0]; if(!file || !currentUploadCustId) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const img = new Image();
+        img.onload = async () => {
+            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+            const MAX_WIDTH = 800; let width = img.width; let height = img.height;
+            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+            canvas.width = width; canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7); 
+            
+            const photoObj = { id: Date.now(), custId: currentUploadCustId, data: dataUrl, date: new Date().toLocaleDateString('en-GB') };
+            await idb.savePhoto(photoObj);
+            window.showToast("Evidence Saved to Vault 📸", "success");
+            window.showCustomerBriefing(currentUploadCustId); 
+        };
+        img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+};
+
+const generateArrearsHtml = (arrData, c, context) => { 
+    if (!arrData.isOwed) {
+        if (c.cleaned) {
+            return `<div class="CMD-alert-success" style="cursor:default; padding: 15px; border-radius: 20px; background: rgba(52, 199, 89, 0.15); color: var(--success); border: 1px solid rgba(52, 199, 89, 0.3);">✅ SETTLED IN FULL</div>`;
+        } else {
+            return `<div class="CMD-alert-success" style="cursor:default; padding: 15px; border-radius: 20px; background: var(--ios-grey); color: var(--text);">⚖️ BALANCE: £0.00</div>`;
+        }
+    }
+    
+    let listHtml = arrData.breakdown.map(b => `<li>£${b.amt.toFixed(2)} - ${window.escapeHTML(b.month)}</li>`).join('');
+    
+    return `
+        <div class="CMD-alert-danger" style="cursor:default;">
+            <div class="CMD-alert-danger-title">⚠️ TOTAL OUTSTANDING: £${arrData.total.toFixed(2)}</div>
+            <ul class="CMD-arrears-list">${listHtml}</ul>
+            <div style="margin-top: 15px; font-size: 11px; font-weight: 900; opacity: 0.8; text-transform: uppercase;">👆 Tap below to settle or chase</div>
+            
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="ADM-save-btn" style="margin:0; height:45px!important; font-size:13px; background:rgba(0,0,0,0.2); box-shadow:none;" onclick="window.cmdSettlePaid('${c.id}', '${context}')">💰 SETTLE ACCOUNT</button>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="ADM-save-btn" style="margin:0; height:40px!important; font-size:12px; background:white; color:var(--danger); box-shadow:none;" onclick="window.cmdChaseWA('${c.id}', 'polite')">💬 POLITE CHASE</button>
+                <button class="ADM-save-btn" style="margin:0; height:40px!important; font-size:12px; background:black; color:white; box-shadow:none;" onclick="window.cmdChaseWA('${c.id}', 'firm')">🚨 FIRM CHASE</button>
+            </div>
+        </div>`;
+};
+
+const generateHistoryHtml = (id, phone) => { 
+    const history = db.history.filter(h => h.custId === id).slice(-3).reverse();
+    if (history.length === 0) return `<div class="empty-state" style="padding: 10px;"><div class="empty-text" style="font-size:14px;">No Payment History</div></div>`;
+    return history.map(h => `<div class="CMD-history-row" style="align-items:center;"><div><span>${window.escapeHTML(h.date)}</span> <span style="opacity:0.5; font-size:10px; margin-left:5px;">${h.method === 'Bank' ? '🏦' : '💵'}</span></div><div style="display:flex; gap:10px; align-items:center;"><span style="color:var(--success);">£${parseFloat(h.amt).toFixed(2)}</span><button class="quick-action-btn" style="width:28px; height:28px; font-size:12px; margin-left:0;" onclick="window.cmdReceiptWA('${window.escapeHTML(phone)}', '${h.amt}', '${window.escapeHTML(h.date)}')">🧾</button></div></div>`).join('');
+};
+
+window.cmdSettlePaid = (id, context) => { 
+    currentPayId = id; 
+    currentPayContext = context; 
+    const c = db.customers.find(x => x.id === id); 
+    const arr = window.getArrearsData(c); 
+    document.getElementById('pay-name').innerText = c.name; 
+    document.getElementById('pay-arrears-box').innerText = `TOTAL OUTSTANDING: £${arr.total.toFixed(2)}`; 
+    window.closeAllModals(); 
+    document.getElementById('paymentModal').classList.remove('hidden'); 
+};
+
+window.processPayment = (type) => { 
+    const c = db.customers.find(x => x.id === currentPayId);
+    let amt = (type === 'full') ? window.getArrearsData(c).total : parseFloat(document.getElementById('pay-custom-amt').value);
+    if(isNaN(amt) || amt <= 0) return window.showToast("Enter a valid amount", "error");
+    c.paidThisMonth = (parseFloat(c.paidThisMonth) || 0) + amt;
+    db.history.push({ custId: currentPayId, amt, date: new Date().toLocaleDateString('en-GB'), method: currentPayMethod });
+    window.saveData(); 
+    window.renderAllSafe(); 
+    window.closeAllModals(); 
+    window.showToast(`£${amt.toFixed(2)} Collected!`, "success");
+};
+
+window.showJobBriefing = async (id) => {
+    triggerHaptic(); const c = db.customers.find(x => x.id === id); if(!c) return;
+    const container = document.getElementById('briefingData'); const arrData = window.getArrearsData(c);
+    
+    const dest = encodeURIComponent(`${c.houseNum} ${c.street}, ${c.postcode || ''}`); 
+    const navUrl = `https://www.google.com/maps/dir/?api=1&origin=Current+Location&destination=${dest}`;
+    
+    const notesHtml = c.notes ? `<div class="CMD-notes-box">📝 ${window.escapeHTML(c.notes)}</div>` : '';
+
+    container.innerHTML = `
+        <div class="CMD-header"><h2>${window.escapeHTML(c.name)}</h2><button class="CMD-header-edit-btn" onclick="window.openAddCustomerModal('${c.id}')">✏️</button><div class="CMD-header-sub">${window.escapeHTML(c.houseNum)} ${window.escapeHTML(c.street)}</div></div>
+        ${notesHtml}
+        ${generateArrearsHtml(arrData, c, 'job')}
+        <div class="CMD-action-grid">
+            <button class="CMD-action-btn clean" onclick="window.cmdToggleClean('${c.id}')"><span style="font-size:24px;">🧼</span> <br>${c.cleaned ? 'UNDO CLEAN' : 'MARK CLEAN'}</button>
+            <button class="CMD-action-btn route" onclick="window.open('${navUrl}', '_blank')"><span style="font-size:24px;">📍</span> <br>NAVIGATE</button>
+            <button class="CMD-action-btn call" onclick="window.location.href='tel:${window.escapeHTML(c.phone)}'"><span style="font-size:24px;">📞</span> <br>CALL</button>
+            <button class="CMD-action-btn skip" onclick="window.cmdToggleSkip('${c.id}')"><span style="font-size:24px;">⏭️</span> <br>${c.skipped ? 'UNSKIP' : 'SKIP JOB'}</button>
+            <button class="CMD-action-btn" style="background:rgba(0,0,0,0.05);" onclick="window.triggerPhotoUpload('${c.id}')"><span style="font-size:24px;">📷</span> <br>LOG EVIDENCE</button>
+            <button class="CMD-action-btn invoice" onclick="window.cmdGenerateInvoice('${c.id}')"><span style="font-size:24px;">📄</span> <br>INVOICE</button>
+            <button class="CMD-action-btn whatsapp" onclick="window.cmdReceiptWA('${window.escapeHTML(c.phone)}', '${c.price}', '${new Date().toLocaleDateString('en-GB')}')"><span style="font-size:24px;">💬</span> <br>WA REC</button>
+            <button class="CMD-action-btn sms" onclick="window.cmdReceiptSMS('${window.escapeHTML(c.phone)}', '${c.price}', '${new Date().toLocaleDateString('en-GB')}')"><span style="font-size:24px;">📱</span> <br>SMS REC</button>
+            <button class="CMD-action-btn ai-btn ai-glow-btn" onclick="window.triggerAI('reply', '${c.id}')"><span style="font-size:24px;">✨</span> <br>SMART REPLY</button>
+        </div>
+        <div id="modal-photo-gallery"></div>
+        <h3 class="CMD-history-hdr">Rolling History (Tap 🧾 for receipt)</h3><div class="CMD-history-box">${generateHistoryHtml(c.id, c.phone)}</div>
+        <button class="ADM-save-btn" style="background: var(--ios-grey); color: var(--text); box-shadow: none; margin-top: 25px;" onclick="window.closeAllModals()">CLOSE CARD</button>
+    `;
+    document.getElementById('briefingModal').classList.remove('hidden');
+
+    const photos = await idb.getPhotos(c.id);
+    const photoContainer = document.getElementById('modal-photo-gallery');
+    if(photos.length > 0) {
+        photoContainer.innerHTML = `<h3 class="CMD-history-hdr">Evidence Photos</h3><div class="CMD-photo-gallery">${photos.map(p => `<img src="${p.data}" class="CMD-photo-thumb" onclick="window.open('${p.data}')">`).join('')}</div>`;
+    }
+};
+
+window.showCustomerBriefing = async (id) => { 
+    triggerHaptic(); const c = db.customers.find(x => x.id === id); if(!c) return;
+    const container = document.getElementById('briefingData'); const arrData = window.getArrearsData(c);
+    const notesHtml = c.notes ? `<div class="CMD-notes-box">📝 ${window.escapeHTML(c.notes)}</div>` : '';
+
+    container.innerHTML = `
+        <div class="CMD-header"><h2>${window.escapeHTML(c.name)}</h2><button class="CMD-header-edit-btn" onclick="window.openAddCustomerModal('${c.id}')">✏️</button><div class="CMD-header-sub">${window.escapeHTML(c.houseNum)} ${window.escapeHTML(c.street)} <br>${window.escapeHTML(c.postcode || '')}</div></div>
+        <div class="CMD-details-box"><div class="CMD-detail-row"><span>📞 Phone</span><span>${window.escapeHTML(c.phone) || 'N/A'}</span></div><div class="CMD-detail-row"><span>💰 Price</span><span>£${parseFloat(c.price).toFixed(2)}</span></div><div class="CMD-detail-row"><span>📅 Week</span><span>Week ${window.escapeHTML(c.week)}</span></div><div class="CMD-detail-row"><span>📆 Day</span><span>${window.escapeHTML(c.day)}</span></div><div class="CMD-detail-row"><span>🔄 Cycle</span><span>${window.escapeHTML(c.freq || 4)} Weekly</span></div></div>
+        ${notesHtml}
+        ${generateArrearsHtml(arrData, c, 'cust')}
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <button class="ADM-save-btn" style="margin-top:0; height: 50px!important; font-size: 12px; background: rgba(0,0,0,0.05); color: var(--text); box-shadow: none; flex:1;" onclick="window.triggerPhotoUpload('${c.id}')">📷 LOG EVIDENCE</button>
+            <button class="ADM-save-btn" style="margin-top:0; height: 50px!important; font-size: 12px; background: transparent; border: 2px solid var(--accent); color: var(--accent); box-shadow: none; flex:1;" onclick="window.cmdGenerateInvoice('${c.id}')">📄 PDF INVOICE</button>
+        </div>
+        <div id="modal-photo-gallery"></div>
+        <h3 class="CMD-history-hdr">Rolling History (Tap 🧾 for receipt)</h3><div class="CMD-history-box">${generateHistoryHtml(c.id, c.phone)}</div>
+        <button class="ADM-save-btn" style="background: var(--ios-grey); color: var(--text); box-shadow: none; margin-top: 25px;" onclick="window.closeAllModals()">CLOSE CARD</button>
+    `;
+    document.getElementById('briefingModal').classList.remove('hidden');
+
+    const photos = await idb.getPhotos(c.id);
+    const photoContainer = document.getElementById('modal-photo-gallery');
+    if(photos.length > 0) {
+        photoContainer.innerHTML = `<h3 class="CMD-history-hdr">Evidence Photos</h3><div class="CMD-photo-gallery">${photos.map(p => `<img src="${p.data}" class="CMD-photo-thumb" onclick="window.open('${p.data}')">`).join('')}</div>`;
+    }
+};
+
+const getFinancialYearDates = (yearStr) => {
+    const startYear = parseInt(yearStr);
+    return { start: new Date(`${startYear}-04-06T00:00:00`), end: new Date(`${startYear + 1}-04-05T23:59:59`) };
+};
+
+const parseGBDate = (dateStr) => {
+    const parts = dateStr.split('/');
+    if(parts.length === 3) return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T12:00:00`);
+    return new Date(); 
+};
+
+window.cmdGenerateTaxPDF = () => {
+    triggerHaptic();
+    const yearStr = document.getElementById('taxYearSelect').value;
+    const { start, end } = getFinancialYearDates(yearStr);
+    
+    let totalIncome = 0; let expData = { Fuel:0, Equipment:0, Food:0, Marketing:0, Other:0 };
+    
+    db.history.forEach(h => {
+        const d = parseGBDate(h.date);
+        if(d >= start && d <= end) totalIncome += parseFloat(h.amt);
+    });
+    
+    let totalSpend = 0;
+    db.expenses.forEach(e => {
+        const d = parseGBDate(e.date);
+        if(d >= start && d <= end) {
+            const amt = parseFloat(e.amt); totalSpend += amt;
+            if(expData[e.cat] !== undefined) expData[e.cat] += amt; else expData.Other += amt;
+        }
+    });
+
+    const printArea = document.getElementById('print-area');
+    printArea.innerHTML = `
+        <div style="max-width: 800px; margin: 0 auto; font-family: sans-serif; color: black; padding: 20px;">
+            <h1 style="color: #007aff; margin-bottom: 5px;">ANNUAL TAX REPORT</h1>
+            <p style="margin-top: 0; color: #666; font-size: 14px;"><strong>Tax Year:</strong> 6 April ${start.getFullYear()} - 5 April ${end.getFullYear()}</p>
+            <hr style="border: 1px solid #eee; margin: 20px 0;">
+            <h2 style="margin-bottom:10px;">Income</h2>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding-bottom:5px;"><span>Gross Turnover</span><strong>£${totalIncome.toFixed(2)}</strong></div>
+            <h2 style="margin-top:30px; margin-bottom:10px;">Allowable Expenses</h2>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px 0;"><span>Fuel / Motoring</span><span>£${expData.Fuel.toFixed(2)}</span></div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px 0;"><span>Equipment / Materials</span><span>£${expData.Equipment.toFixed(2)}</span></div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px 0;"><span>Advertising / Marketing</span><span>£${expData.Marketing.toFixed(2)}</span></div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px 0;"><span>Subsistence (Food)</span><span>£${expData.Food.toFixed(2)}</span></div>
+            <div style="display:flex; justify-content:space-between; border-bottom:2px solid #000; padding:5px 0;"><span>Other</span><span>£${expData.Other.toFixed(2)}</span></div>
+            <div style="display:flex; justify-content:space-between; padding:10px 0;"><strong>Total Expenses</strong><strong style="color:#ff453a;">-£${totalSpend.toFixed(2)}</strong></div>
+            <hr style="border: 1px solid #eee; margin: 30px 0;">
+            <p style="text-align: right; font-size: 26px; color: #34C759;"><strong>Net Profit: £${(totalIncome - totalSpend).toFixed(2)}</strong></p>
+            <p style="font-size: 12px; color: #999; text-align: center; margin-top:50px;">Generated by Ultimate Hydro Pro.</p>
+        </div>
+    `;
+    window.print();
+};
+
+window.cmdGenerateMTD = () => {
+    triggerHaptic();
+    const yearStr = document.getElementById('taxYearSelect').value;
+    const qStr = document.getElementById('taxQuarterSelect').value;
+    const startYear = parseInt(yearStr);
+    
+    let start, end;
+    if(qStr === 'Q1') { start = new Date(`${startYear}-04-06T00:00:00`); end = new Date(`${startYear}-07-05T23:59:59`); }
+    if(qStr === 'Q2') { start = new Date(`${startYear}-07-06T00:00:00`); end = new Date(`${startYear}-10-05T23:59:59`); }
+    if(qStr === 'Q3') { start = new Date(`${startYear}-10-06T00:00:00`); end = new Date(`${startYear+1}-01-05T23:59:59`); }
+    if(qStr === 'Q4') { start = new Date(`${startYear+1}-01-06T00:00:00`); end = new Date(`${startYear+1}-04-05T23:59:59`); }
+
+    let csv = "Date,Reference,Description,Amount,Category\n";
+    db.history.forEach(h => {
+        const d = parseGBDate(h.date);
+        if(d >= start && d <= end) csv += `${h.date},INC-${h.custId},Sales Income,${h.amt},Sales\n`;
+    });
+    db.expenses.forEach(e => {
+        const d = parseGBDate(e.date);
+        if(d >= start && d <= end) csv += `${e.date},EXP-${e.id},${window.escapeHTML(e.desc)},-${e.amt},${window.escapeHTML(e.cat)}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' }); 
+    const url = URL.createObjectURL(blob); 
+    const link = document.createElement("a"); 
+    link.href = url; 
+    link.download = `HydroPro_MTD_${yearStr}_${qStr}.csv`; 
+    link.click(); 
+    window.showToast(`MTD Exported!`, "success");
+};
+
+window.openExpenseModal = () => { triggerHaptic(); document.getElementById('mExpDesc').value = ''; document.getElementById('mExpAmt').value = ''; document.getElementById('mExpCat').value = 'Fuel'; document.getElementById('expenseModal').classList.remove('hidden'); };
+window.closeExpenseModal = () => { window.closeAllModals(); };
+
+window.addFinanceExpense = () => { 
+    triggerHaptic(); const desc = document.getElementById('mExpDesc').value.trim(); const amt = parseFloat(document.getElementById('mExpAmt').value); const cat = document.getElementById('mExpCat').value;
+    if(!desc || isNaN(amt) || amt <= 0) return window.showToast("Description and Amount required", "error");
+    db.expenses.push({ id: Date.now(), desc, amt, cat, date: new Date().toLocaleDateString('en-GB') }); window.saveData(); window.closeAllModals();
+    window.openTab('finances-root', 'nav-fin-btn'); window.showToast("Expense Logged", "success");
+};
+
+const arc3DPlugin = {
+    id: 'arc3DPlugin',
+    beforeDatasetDraw: (chart, args, options) => {
+        if(typeof chart === 'undefined' || !chart.ctx) return;
+        const ctx = chart.ctx; ctx.save(); ctx.shadowColor = document.body.classList.contains('dark-mode') ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.2)'; ctx.shadowBlur = 15; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 10;
+    },
+    afterDatasetDraw: (chart, args, options) => { if(typeof chart !== 'undefined' && chart.ctx) chart.ctx.restore(); }
+};
+
+window.renderFinances = () => {
+    const blackCard = document.getElementById('FIN-black-card'); const bentoBox = document.getElementById('FIN-bento-box'); const ledger = document.getElementById('FIN-ledger-list'); 
+    if(!blackCard || !bentoBox || !ledger) return;
+    
+    let income = 0, spend = 0, expected = 0, totalArrears = 0, forecasted = 0; 
+    db.customers.forEach(c => {
+        income += (parseFloat(c.paidThisMonth) || 0); expected += (parseFloat(c.price) || 0);
+        if (!c.cleaned && !c.skipped) forecasted += (parseFloat(c.price) || 0);
+        const arrData = window.getArrearsData(c); if(arrData.isOwed) totalArrears += arrData.total; 
+    });
+    db.expenses.forEach(e => spend += (parseFloat(e.amt) || 0));
+    const progressPct = expected > 0 ? Math.min((income / expected) * 100, 100) : 0;
+
+    let cashTotal = 0; let bankTotal = 0; let currentMonthStr = new Date().toLocaleDateString('en-GB').substring(3);
+    db.history.forEach(h => { if (h.date && h.date.includes(currentMonthStr)) { if (h.method === 'Bank') bankTotal += parseFloat(h.amt); else cashTotal += parseFloat(h.amt); } });
+    const netProfit = income - spend;
+
+    blackCard.innerHTML = `<div class="fbc-title">Net Profit</div><div class="fbc-balance">£${netProfit.toFixed(2)}</div><div class="fbc-split-row"><div class="fbc-split-item"><span class="fbc-split-label">💵 Cash in Hand</span><span class="fbc-split-val">£${cashTotal.toFixed(2)}</span></div><div class="fbc-split-item" style="text-align: right; align-items: flex-end;"><span class="fbc-split-label">Banked 🏦</span><span class="fbc-split-val">£${bankTotal.toFixed(2)}</span></div></div>`;
+    bentoBox.innerHTML = `<div class="fin-bento-card"><div class="fbc-icon-wrap fbc-green">📈</div><div><div class="fin-bento-lbl">Income</div><div class="fin-bento-val">£${income.toFixed(2)}</div></div></div><div class="fin-bento-card"><div class="fbc-icon-wrap fbc-red">📉</div><div><div class="fin-bento-lbl">Spent</div><div class="fin-bento-val">£${spend.toFixed(2)}</div></div></div><div class="fin-bento-card"><div class="fbc-icon-wrap fbc-orange">⚠️</div><div><div class="fin-bento-lbl">Arrears</div><div class="fin-bento-val">£${totalArrears.toFixed(2)}</div></div></div><div class="fin-bento-card"><div class="fbc-icon-wrap fbc-blue">🎯</div><div><div class="fin-bento-lbl">Collected</div><div class="fin-bento-val">${Math.round(progressPct)}%</div></div></div>`;
+    
+    const ctx = document.getElementById('financeChartCanvas');
+    if (ctx && typeof Chart !== 'undefined') {
+        if (financeChartInstance) financeChartInstance.destroy(); 
+        let labels = [`Collected: £${income.toFixed(2)}`, `Debt: £${totalArrears.toFixed(2)}`, `Forecasted: £${forecasted.toFixed(2)}`]; let chartData = [income, totalArrears, forecasted]; let colors = ['#34C759', '#ff453a', '#007aff']; let isDarkMode = document.body.classList.contains('dark-mode');
+        if (income > 0 || totalArrears > 0 || forecasted > 0) {
+            financeChartInstance = new Chart(ctx, { 
+                type: 'doughnut', data: { labels: labels, datasets: [{ data: chartData, backgroundColor: colors, borderWidth: 4, borderColor: isDarkMode ? '#1c1c1e' : '#ffffff', borderRadius: 15, hoverOffset: 6, spacing: 5 }] }, 
+                options: { responsive: true, maintainAspectRatio: false, cutout: '75%', layout: { padding: 10 }, plugins: { legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true, pointStyle: 'circle', color: isDarkMode ? '#fff' : '#000', font: { family: '"Plus Jakarta Sans", sans-serif', weight: 'bold', size: 13 } } }, tooltip: { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)', titleColor: isDarkMode ? '#000' : '#fff', bodyColor: isDarkMode ? '#000' : '#fff', padding: 12, cornerRadius: 12, displayColors: false, callbacks: { label: function(context) { return ' ' + context.label; } } } } } 
+            });
+        }
+    }
+    
+    if (db.expenses.length === 0) { ledger.innerHTML = `<div class="empty-state" style="padding-top:20px;"><span class="empty-icon">🧾</span><div class="empty-text">No Expenses Yet</div><div class="empty-sub">Your ledger is completely clean.</div></div>`; 
+    } else { 
+        let ledgerHtml = '';
+        [...db.expenses].reverse().forEach(item => {
+            let catIcon = "🏢"; if(item.cat === 'Fuel') catIcon = "⛽"; if(item.cat === 'Equipment') catIcon = "🧽"; if(item.cat === 'Food') catIcon = "🍔"; if(item.cat === 'Marketing') catIcon = "📣"; 
+            ledgerHtml += `<div class="ledger-item"><div class="ledger-left"><div class="ledger-icon">${catIcon}</div><div class="ledger-details"><span class="ledger-desc">${window.escapeHTML(item.desc)}</span><span class="ledger-date">${window.escapeHTML(item.date)}</span></div></div><div class="ledger-amt">-£${parseFloat(item.amt).toFixed(2)}</div></div>`;
+        }); 
+        ledger.innerHTML = ledgerHtml; 
+    }
+};
+
+window.setPayMethod = (method) => {
+    currentPayMethod = method;
+    document.getElementById('btnPayCash').classList.remove('active');
+    document.getElementById('btnPayBank').classList.remove('active');
+    if (method === 'Cash') document.getElementById('btnPayCash').classList.add('active');
+    if (method === 'Bank') document.getElementById('btnPayBank').classList.add('active');
+};
+
+window.openTomorrowModal = () => {
+    triggerHaptic();
+    const list = document.getElementById('tomorrow-list');
+    list.innerHTML = '';
+    
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    let todayIdx = days.indexOf(workingDay);
+    let tmrwIdx = (todayIdx + 1) % 7;
+    let tmrwDay = days[tmrwIdx];
+    
+    let currentWkInt = parseInt(curWeek, 10) || 1;
+    let tmrwWeek = currentWkInt;
+    if (tmrwIdx === 1 && todayIdx === 0) { 
+        tmrwWeek = currentWkInt >= 5 ? 1 : currentWkInt + 1; 
+    }
+    
+    document.getElementById('tomorrow-title-sub').innerText = `Wk ${tmrwWeek} - ${tmrwDay}`;
+    
+    let tmrwJobs = db.customers.filter(c => String(c.week).trim() === String(tmrwWeek).trim() && String(c.day).trim() === String(tmrwDay).trim() && !c.skipped);
+    
+    if (tmrwJobs.length === 0) {
+        list.innerHTML = '<div style="padding:20px; text-align:center; opacity:0.5; font-weight:800;">No jobs scheduled for tomorrow.</div>';
+    } else {
+        tmrwJobs.forEach(c => {
+            let p = String(c.phone || '').replace(/\D/g, '');
+            let isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; 
+            let sep = isIOS ? '&' : '?';
+            let msg = `Hi ${c.name}, just a quick reminder from Hydro Pro that your window clean is due tomorrow! Please leave any side gates unlocked. Thank you! 💧`;
+            let smsLink = p ? `sms:${p}${sep}body=${encodeURIComponent(msg)}` : '#';
+            let waLink = p ? `https://wa.me/${p.startsWith('0') ? '44' + p.substring(1) : p}?text=${encodeURIComponent(msg)}` : '#';
+            
+            list.innerHTML += `
+                <div style="background:var(--ios-grey); padding:15px; border-radius:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="flex:1;"><strong>${window.escapeHTML(c.name)}</strong><br><small>${window.escapeHTML(c.houseNum)} ${window.escapeHTML(c.street)}</small></div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="quick-action-btn" style="margin:0; background:rgba(52, 199, 89, 0.2); color:var(--success);" onclick="window.open('${waLink}', '_blank')">💬</button>
+                        <button class="quick-action-btn" style="margin:0; background:rgba(0, 122, 255, 0.2); color:var(--accent);" onclick="window.location.href='${smsLink}'">📱</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    document.getElementById('tomorrowModal').classList.remove('hidden');
+};
+
+const getIcon = (code) => { const map = { '01d':'☀️','01n':'🌙','02d':'⛅','02n':'☁️','03d':'☁️','03n':'☁️','04d':'☁️','04n':'☁️','09d':'🌧️','09n':'🌧️','10d':'🌧️','10n':'🌧️','11d':'🌦️','11n':'🌧️','13d':'🌨️','13n':'🌨️','50d':'💨','50n':'💨' }; return map[code] || '🌤️'; };
+async function initWeather() { 
+    const wDash = document.getElementById('WTH-dashboard');
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async (pos) => { 
+            try { 
+                const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&appid=${W_API_KEY}&units=metric`); 
+                const data = await res.json(); const temp = `${Math.round(data.main.temp)}°C`; const currentIcon = getIcon(data.weather[0].icon); const currentDesc = data.weather[0].description;
+                const hwIcon = document.getElementById('hw-icon'); const hwTemp = document.getElementById('hw-temp'); const hwDesc = document.getElementById('hw-desc');
+                if(hwIcon) hwIcon.innerText = currentIcon; if(hwTemp) hwTemp.innerText = temp; if(hwDesc) hwDesc.innerText = currentDesc;
+                const fRes = await fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&appid=${W_API_KEY}&units=metric`); const fData = await fRes.json();
+                const dailyData = fData.list.filter(item => item.dt_txt.includes('12:00:00')).slice(0, 5);
+                let forecastHtml = dailyData.map(day => { const dateObj = new Date(day.dt * 1000); const dayName = dateObj.toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase(); return `<div class="WTH-card"><span class="WTH-day">${dayName}</span><span class="WTH-icon">${getIcon(day.weather[0].icon)}</span><span class="WTH-temps">${Math.round(day.main.temp)}°C</span></div>`; }).join('');
+                if(wDash) { wDash.innerHTML = `<div class="WTH-hero"><div class="WTH-icon" style="font-size: 50px;">${currentIcon}</div><div class="WTH-hero-temp">${temp}</div><div class="WTH-hero-desc">${currentDesc}</div><div style="font-size: 14px; font-weight: 900; color: var(--text); opacity: 0.5; margin-top: 15px; letter-spacing: 1px; text-transform: uppercase;">📍 ${window.escapeHTML(data.name)}</div></div><h3 class="ADM-hdr" style="margin: 25px 0 10px;">5-Day Forecast</h3>${forecastHtml}`; }
+            } catch (e) { if (wDash) wDash.innerHTML = `<div class="empty-state"><span class="empty-icon">📡</span><div class="empty-text">Weather Offline</div><div class="empty-sub">Check your connection to pull the radar.</div></div>`; } 
+        });
+    }
+}
