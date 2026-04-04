@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v5.9</title>
+    <title>Ultimate Hydro Pro v6.0</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=5.9">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body class="light-mode">
 
@@ -188,7 +188,7 @@
 
             <div class="ADM-card" style="border: 2px dashed #ff9500;">
                 <h3 class="ADM-hdr" style="color: #ff9500; font-weight: 950;">Emergency Data Recovery</h3>
-                <p style="font-size: 12px; font-weight: 600; opacity: 0.6; text-align: center; margin: 0 0 15px;">Lost your customers after a cache clear? Tap below to scan phone memory.</p>
+                <p style="font-size: 12px; font-weight: 600; opacity: 0.6; text-align: center; margin: 0 0 15px;">Lost your customers after a cache clear? Tap below to run a deep scan of your phone's memory.</p>
                 <button class="ADM-save-btn" style="margin-top:0; height: 50px!important; font-size: 14px; background: #ff9500; box-shadow: 0 8px 20px rgba(255, 149, 0, 0.25);" onclick="window.runDeepScanRecovery()">🛟 RUN DEEP SCAN</button>
             </div>
 
@@ -206,14 +206,22 @@
                     <div style="font-size: 13px; color: var(--success); font-weight: 900;">✅ STATUS: ACTIVE</div>
                 </div>
 
+                <h3 class="ADM-hdr" style="text-align: left; margin: 0 0 10px;">Accounting Sync</h3>
+                <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0; margin-bottom: 20px;">
+                    <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#2ca01c; box-shadow:0 5px 15px rgba(44,160,28,0.2);" onclick="window.exportToQuickBooks()">QuickBooks</button>
+                    <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#13b5ea; box-shadow:0 5px 15px rgba(19,181,234,0.2);" onclick="window.exportToXero()">Xero</button>
+                    <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#00d639; color:#000; box-shadow:0 5px 15px rgba(0,214,57,0.2);" onclick="window.exportToSage()">Sage</button>
+                    <button class="ADM-save-btn" style="margin-top:0; height:50px!important; font-size:14px; background:#00b2a9; box-shadow:0 5px 15px rgba(0,178,169,0.2);" onclick="window.exportToFreeAgent()">FreeAgent</button>
+                </div>
+                
                 <div style="display: flex; gap: 15px; width: 100%; margin-bottom: 15px;">
-                    <button class="ADM-util-btn grey" style="flex: 1; margin: 0;" onclick="window.exportData()">📤 Backup</button>
-                    <button class="ADM-util-btn grey" style="flex: 1; margin: 0;" onclick="document.getElementById('importFile').click()">📥 Restore</button>
+                    <button class="ADM-util-btn grey" style="flex: 1; width: auto!important; height: 70px!important; margin: 0;" onclick="window.exportData()">📤 Backup</button>
+                    <button class="ADM-util-btn grey" style="flex: 1; width: auto!important; height: 70px!important; margin: 0;" onclick="document.getElementById('importFile').click()">📥 Restore</button>
                     <input type="file" id="importFile" hidden onchange="window.importData(event)" accept=".json">
                 </div>
                 
                 <button class="ADM-util-btn red" onclick="window.cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v5.9</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v6.0</footer>
             </div>
         </section>
 
@@ -229,14 +237,6 @@
 
     <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden onchange="window.handlePhotoUpload(event)">
 
-    <div id="briefingModal" class="modal-overlay hidden" onclick="window.closeAllModals()">
-        <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
-            <div class="modal-drag-pill"></div>
-            <button class="close-x-btn" onclick="window.closeAllModals()">✕</button>
-            <div id="briefingData"></div>
-        </div>
-    </div>
-
     <div id="aiTeaserModal" class="modal-overlay hidden" onclick="window.closeAllModals()">
         <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
             <div class="modal-drag-pill"></div>
@@ -245,8 +245,11 @@
                 <div style="font-size: 50px; margin-bottom: 5px;">✨</div>
                 <h2 style="font-size: 26px; padding:0;">Wake up Hydro AI</h2>
             </div>
-            <p style="text-align: center; font-size: 15px; font-weight: 600; opacity: 0.7; margin-bottom: 25px;">Activate wet-hands voice commands and smart text drafts.</p>
+            <p style="text-align: center; font-size: 15px; font-weight: 600; opacity: 0.7; margin-bottom: 25px;">
+                Auto-scan receipts, draft smart replies, and use wet-hands voice commands.
+            </p>
             <div style="background: rgba(138, 43, 226, 0.1); padding: 15px; border-radius: 20px; border: 1px solid rgba(138, 43, 226, 0.3); margin-bottom: 20px;">
+                <div style="font-size: 12px; font-weight: 900; color: #8a2be2; text-transform: uppercase; margin-bottom: 5px;">API Key Required</div>
                 <input type="password" id="aiKeyInputModal" placeholder="sk-proj-..." style="width: 100%; height: 40px; border-radius: 10px; border: none; padding: 0 10px; font-size: 14px; font-weight: 700; outline: none; font-family: 'Plus Jakarta Sans', sans-serif;">
             </div>
             <button class="ADM-save-btn ai-glow-btn" style="margin-top:0;" onclick="window.saveModalAIKey()">ACTIVATE AI ENGINE</button>
@@ -258,9 +261,16 @@
             <div class="modal-drag-pill"></div>
             <button class="close-x-btn" onclick="window.closeAllModals()">✕</button>
             <div class="CMD-header"><h2>Log Expense</h2></div>
-            <div class="ADM-row"><span>🏷️</span><select id="mExpCat"><option value="Fuel">⛽ Fuel</option><option value="Equipment">🧽 Equipment</option><option value="Other">🏢 Other</option></select></div>
+            <div class="ADM-row">
+                <span>🏷️</span>
+                <select id="mExpCat">
+                    <option value="Fuel">⛽ Fuel</option>
+                    <option value="Equipment">🧽 Equipment</option>
+                    <option value="Other">🏢 Other</option>
+                </select>
+            </div>
             <div class="ADM-row"><span>🛒</span><input type="text" id="mExpDesc" placeholder="What did you buy?"></div>
-            <div class="ADM-row"><span>💸</span><input type="text" inputmode="decimal" id="mExpAmt" placeholder="Amount £"></div>
+            <div class="ADM-row"><span>💸</span><input type="text" inputmode="decimal" pattern="[0-9\.]*" id="mExpAmt" placeholder="Amount £"></div>
             <button class="ADM-save-btn" style="margin-top:25px;" onclick="window.addFinanceExpense()">SAVE EXPENSE</button>
         </div>
     </div>
@@ -276,7 +286,6 @@
             <div class="ADM-row"><span>📍</span><input type="text" id="cPostcode" placeholder="Postcode" oninput="this.value = this.value.toUpperCase()"></div>
             <div class="ADM-row"><span>📞</span><input type="tel" id="cPhone" placeholder="Phone Number"></div>
             <div class="ADM-row"><span>💰</span><input type="text" inputmode="decimal" pattern="[0-9\.]*" id="cPrice" placeholder="Price £"></div>
-            
             <div class="ADM-row">
                 <span>🔄</span>
                 <select id="cFreq">
@@ -287,15 +296,31 @@
                     <option value="12">12 Weekly</option>
                 </select>
             </div>
-
-            <div class="ADM-row"><span>📅</span><select id="cWeek"><option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option><option value="4">Week 4</option><option value="5">Week 5</option></select></div>
-            <div class="ADM-row"><span>📆</span><select id="cDay"><option value="Mon">Monday</option><option value="Tue">Tuesday</option><option value="Wed">Wednesday</option><option value="Thu">Thursday</option><option value="Fri">Friday</option><option value="Sat">Saturday</option><option value="Sun">Sunday</option></select></div>
-            <div class="ADM-row" style="border-bottom:none; height: auto!important; align-items: flex-start; padding-top: 15px;"><span style="margin-top: 2px;">📝</span><textarea id="cNotes" placeholder="Additional Notes..." rows="3"></textarea></div>
+            <div class="ADM-row">
+                <span>📅</span>
+                <select id="cWeek"><option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option><option value="4">Week 4</option><option value="5">Week 5</option></select>
+            </div>
+            <div class="ADM-row">
+                <span>📆</span>
+                <select id="cDay"><option value="Mon">Monday</option><option value="Tue">Tuesday</option><option value="Wed">Wednesday</option><option value="Thu">Thursday</option><option value="Fri">Friday</option><option value="Sat">Saturday</option><option value="Sun">Sunday</option></select>
+            </div>
+            <div class="ADM-row" style="border-bottom:none; height: auto!important; align-items: flex-start; padding-top: 15px;">
+                <span style="margin-top: 2px;">📝</span>
+                <textarea id="cNotes" placeholder="Additional Notes..." rows="3"></textarea>
+            </div>
             <div class="CMD-action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
                 <button class="ADM-save-btn" style="margin-top:0; background: var(--ios-grey); color: var(--text); box-shadow: none;" onclick="window.closeAllModals()">CANCEL</button>
                 <button id="saveCustomerBtn" class="ADM-save-btn" style="margin-top:0;" onclick="window.saveCustomer()">SAVE</button>
             </div>
             <button id="deleteCustomerBtn" class="ADM-save-btn hidden" style="margin-top: 15px; background: transparent; border: 3px dashed var(--danger); color: var(--danger); box-shadow: none;" onclick="window.cmdDeleteCustomer()">🗑️ DELETE CUSTOMER</button>
+        </div>
+    </div>
+
+    <div id="briefingModal" class="modal-overlay hidden" onclick="window.closeAllModals()">
+        <div class="modal-content bottom-sheet" onclick="event.stopPropagation()">
+            <div class="modal-drag-pill"></div>
+            <button class="close-x-btn" onclick="window.closeAllModals()">✕</button>
+            <div id="briefingData"></div>
         </div>
     </div>
 
@@ -308,14 +333,16 @@
                 <button id="btnPayBank" class="segment" onclick="window.setPayMethod('Bank')">🏦 Bank Tx</button>
             </div>
             <div class="CMD-header" style="border-bottom: none; text-align: center;">
+                <div class="CMD-header-sub" style="margin-bottom: 5px; color: var(--success);">SECURE CHECKOUT</div>
                 <h2 id="pay-name" style="font-size: 26px;">Customer Name</h2>
             </div>
             <div id="pay-arrears-box" class="CMD-alert-danger" style="margin-top: 0; cursor: default; transform: none;"></div>
             <button id="pay-full-btn" class="ADM-save-btn" style="background: var(--success); margin-top: 5px; margin-bottom: 25px;" onclick="window.processPayment('full')">PAY IN FULL</button>
             <div class="ADM-card" style="margin: 0; padding: 20px; border-radius: 25px; box-shadow: none!important; border: 2px solid var(--ios-grey);">
-                <div class="ADM-row" style="border: none; height: 60px!important; justify-content: center;">
+                <div style="font-size: 11px; font-weight: 900; opacity: 0.5; text-transform: uppercase; margin-bottom: 10px; text-align: center;">Or Enter Custom Amount</div>
+                <div class="ADM-row" style="border: none; height: 60px!important; margin-bottom: 15px; justify-content: center;">
                     <span style="font-size: 26px; font-weight: 900; color: var(--text); width: auto;">£</span>
-                    <input type="text" inputmode="decimal" id="pay-custom-amt" placeholder="0.00" style="font-size: 32px; font-weight: 950; text-align: center; color: var(--text); width: 120px; flex: none;">
+                    <input type="text" inputmode="decimal" pattern="[0-9\.]*" id="pay-custom-amt" placeholder="0.00" style="font-size: 32px; font-weight: 950; text-align: center; color: var(--text); width: 120px; flex: none;">
                 </div>
                 <button class="ADM-save-btn" style="height: 60px!important; font-size: 16px; margin-top: 0; background: var(--text); color: var(--bg);" onclick="window.processPayment('custom')">APPLY PARTIAL PAYMENT</button>
             </div>
@@ -330,6 +357,7 @@
                 <h2>Tomorrow's Route</h2>
                 <div class="CMD-header-sub" id="tomorrow-title-sub">Loading...</div>
             </div>
+            <div style="font-size: 14px; font-weight: 700; opacity: 0.6; margin-bottom: 15px;">Send gate reminders to these customers:</div>
             <div id="tomorrow-list" style="max-height: 50vh; overflow-y: auto;"></div>
         </div>
     </div>
@@ -349,6 +377,6 @@
 
     <div id="print-area"></div>
 
-    <script src="app.js?v=5.9" defer></script>
+    <script src="app.js" defer></script>
 </body>
 </html>
