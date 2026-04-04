@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Hydro Pro v5.8</title>
+    <title>Ultimate Hydro Pro v5.9</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f2f2f7" id="theme-meta">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="stylesheet" href="styles.css?v=5.8">
+    <link rel="stylesheet" href="styles.css?v=5.9">
 </head>
 <body class="light-mode">
 
@@ -160,6 +160,7 @@
                         <option value="2024">2024 / 2025</option>
                         <option value="2025" selected>2025 / 2026</option>
                         <option value="2026">2026 / 2027</option>
+                        <option value="2027">2027 / 2028</option>
                     </select>
                 </div>
                 <div style="display: flex; gap: 10px; margin-bottom: 25px; width: 100%;">
@@ -177,6 +178,12 @@
                     </div>
                 </div>
                 <button class="ADM-save-btn" style="margin-top:0; background: var(--accent); box-shadow: 0 8px 20px rgba(0, 122, 255, 0.25);" onclick="window.cmdGenerateTaxPDF()">📄 ANNUAL TAX PDF</button>
+            </div>
+
+            <div class="ADM-card" style="border: 2px solid #8a2be2;">
+                <h3 class="ADM-hdr" style="color: #8a2be2; font-weight: 950;">🧠 The AI Vault</h3>
+                <div class="ADM-row"><span>🔑</span><input type="password" id="sAIKey" placeholder="Paste API Key here..."></div>
+                <button class="ADM-save-btn ai-glow-btn" style="height: 50px!important; font-size: 14px;" onclick="window.saveSettingsAIKey()">SECURE AI KEY ✨</button>
             </div>
 
             <div class="ADM-card" style="border: 2px dashed #ff9500;">
@@ -206,7 +213,7 @@
                 </div>
                 
                 <button class="ADM-util-btn red" onclick="window.cmdNuclear()">☢️ FACTORY RESET</button>
-                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v5.8</footer>
+                <footer id="G-FOOTER">ULTIMATE HYDRO PRO // v5.9</footer>
             </div>
         </section>
 
@@ -269,7 +276,18 @@
             <div class="ADM-row"><span>📍</span><input type="text" id="cPostcode" placeholder="Postcode" oninput="this.value = this.value.toUpperCase()"></div>
             <div class="ADM-row"><span>📞</span><input type="tel" id="cPhone" placeholder="Phone Number"></div>
             <div class="ADM-row"><span>💰</span><input type="text" inputmode="decimal" pattern="[0-9\.]*" id="cPrice" placeholder="Price £"></div>
-            <div class="ADM-row"><span>🔄</span><select id="cFreq"><option value="4">4 Weekly</option><option value="8">8 Weekly</option><option value="12">12 Weekly</option></select></div>
+            
+            <div class="ADM-row">
+                <span>🔄</span>
+                <select id="cFreq">
+                    <option value="1">1 Weekly</option>
+                    <option value="2">2 Weekly</option>
+                    <option value="4" selected>4 Weekly</option>
+                    <option value="8">8 Weekly</option>
+                    <option value="12">12 Weekly</option>
+                </select>
+            </div>
+
             <div class="ADM-row"><span>📅</span><select id="cWeek"><option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option><option value="4">Week 4</option><option value="5">Week 5</option></select></div>
             <div class="ADM-row"><span>📆</span><select id="cDay"><option value="Mon">Monday</option><option value="Tue">Tuesday</option><option value="Wed">Wednesday</option><option value="Thu">Thursday</option><option value="Fri">Friday</option><option value="Sat">Saturday</option><option value="Sun">Sunday</option></select></div>
             <div class="ADM-row" style="border-bottom:none; height: auto!important; align-items: flex-start; padding-top: 15px;"><span style="margin-top: 2px;">📝</span><textarea id="cNotes" placeholder="Additional Notes..." rows="3"></textarea></div>
@@ -331,6 +349,6 @@
 
     <div id="print-area"></div>
 
-    <script src="app.js?v=5.8" defer></script>
+    <script src="app.js?v=5.9" defer></script>
 </body>
 </html>
