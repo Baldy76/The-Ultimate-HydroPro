@@ -1,6 +1,6 @@
 "use strict";
 
-const DB_KEY = 'HydroPro_Gold_V36'; 
+const DB_KEY = 'HydroPro_Gold_V57'; 
 const W_API_KEY = "4c00e61833ea94d3c4a1bff9d2c32969"; 
 
 let db = { customers: [], expenses: [], history: [], bank: { name: '', acc: '' } };
